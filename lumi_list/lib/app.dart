@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'route.dart';
-import 'pages/home_page.dart';
 
 class LumiListApp extends StatelessWidget {
   const LumiListApp({super.key});

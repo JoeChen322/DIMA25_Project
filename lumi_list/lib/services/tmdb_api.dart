@@ -6,7 +6,7 @@ class TMDbApi {
   static const String baseUrl = "https://api.themoviedb.org/3";
 
   static Future<List<Movie>> searchMovie(String query) async {
-    final url = "$baseUrl/search/movie";
+    const url = "$baseUrl/search/movie";
 
     final response = await Dio().get(url, queryParameters: {
       "api_key": apiKey,

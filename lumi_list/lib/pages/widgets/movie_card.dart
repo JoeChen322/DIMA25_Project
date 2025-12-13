@@ -15,7 +15,7 @@ class MovieCard extends StatelessWidget {
       title: Text(movie.title),
       subtitle: Text(
         movie.overview.length > 50
-            ? movie.overview.substring(0, 50) + "..."
+            ? "${movie.overview.substring(0, 50)}..."
             : movie.overview,
       ),
       onTap: () {

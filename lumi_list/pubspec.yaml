@@ -41,6 +41,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+    #logo_icon
+  flutter_launcher_icons: ^0.13.1
+
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -91,3 +94,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
+
+#Logo_icon config
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
