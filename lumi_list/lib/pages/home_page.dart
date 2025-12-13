@@ -13,8 +13,8 @@ class _HomePageState extends State<HomePage> {
   int _index = 0;
 
   final List<Widget> _pages = const [
-    HomeContent(),
     SearchPage(),
+    HomeContent(),
     MyListPage(),
   ];
 
@@ -26,8 +26,8 @@ class _HomePageState extends State<HomePage> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: "Home"),
           NavigationDestination(icon: Icon(Icons.search), label: "Search"),
+          NavigationDestination(icon: Icon(Icons.home), label: "Home"),
           NavigationDestination(icon: Icon(Icons.list), label: "My List"),
         ],
       ),

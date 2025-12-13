@@ -1,20 +1,19 @@
 import 'package:dio/dio.dart';
-import '../models/movie.dart';
 
-class TMDbApi {
-  static const String apiKey = "YOUR_API_KEY_HERE";
-  static const String baseUrl = "https://api.themoviedb.org/3";
+class OmdbApi {
+  static const String apiKey = "5a86a29e";
+  static const String baseUrl = "http://www.omdbapi.com/";
 
-  static Future<List<Movie>> searchMovie(String query) async {
-    const url = "$baseUrl/search/movie";
-
-    final response = await Dio().get(url, queryParameters: {
-      "api_key": apiKey,
-      "query": query,
-      "language": "en-US",
+  static Future<Map<String, dynamic>?> searchMovie(String title) async {
+    final response = await Dio().get(baseUrl, queryParameters: {
+      "apikey": apiKey,
+      "t": title,  //search with film title
     });
 
-    final List results = response.data["results"];
-    return results.map((e) => Movie.fromTMDb(e)).toList();
+    if (response.data["Response"] == "False") {
+      return null;
+    }
+
+    return response.data;
   }
 }
