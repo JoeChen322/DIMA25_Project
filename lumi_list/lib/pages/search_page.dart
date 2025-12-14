@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/tmdb_api.dart';
-
+import'movie_detail.dart';
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -81,41 +81,36 @@ class _SearchPageState extends State<SearchPage> {
             if (errorMessage != null)
               Text(errorMessage!, style: const TextStyle(color: Colors.red)),
 
-            if (movieData != null)
+          if (movieData != null)
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        movieData!["Title"] ?? "",
-                        style: const TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
+                child: ListView(
+                  children: [
+                    Card(
+                      child: ListTile(
+                        leading: movieData!["Poster"] != null &&
+                                movieData!["Poster"] != "N/A"
+                            ? Image.network(movieData!["Poster"], width: 50)
+                            : const Icon(Icons.movie),
+
+                        title: Text(movieData!["Title"] ?? ""),
+                        //subtitle: Text("IMDb: ${movieData!["imdbRating"] ?? "N/A"}"),
+
+                        trailing: const Icon(Icons.arrow_forward_ios),
+
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MovieDetailPage(movie: movieData!),
+                            ),
+                          );
+                        },
                       ),
-                      Text(movieData!["Year"] ?? "",
-                          style: const TextStyle(fontSize: 18)),
-
-                      const SizedBox(height: 10),
-
-                      if (movieData!["Poster"] != null &&
-                          movieData!["Poster"] != "N/A")
-                        Image.network(movieData!["Poster"], height: 300),
-
-                      const SizedBox(height: 20),
-
-                      Text(movieData!["Plot"] ?? "No description available",
-                          style: const TextStyle(fontSize: 16)),
-
-                      const SizedBox(height: 20),
-
-                      const Text("Ratings:",
-                          style: TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.bold)),
-                      _buildRatings(movieData!["Ratings"] ?? []),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+
           ],
         ),
       ),
