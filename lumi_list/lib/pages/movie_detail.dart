@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-
+import '../widgets/cast_strip.dart';
+import '../models/cast.dart';
+import '../services/tmdb_api.dart';
 class MovieDetailPage extends StatefulWidget {
   final Map<String, dynamic> movie;
 
@@ -11,7 +13,40 @@ class MovieDetailPage extends StatefulWidget {
 
 class _MovieDetailPageState extends State<MovieDetailPage> {
   bool isFavorite = false; // add to the list（wait for the page set up）
-  int? userRating; // user rating (1-5)
+  int? userRating; // user rating score 1-5
+  final TmdbService tmdbService =
+      TmdbService('eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
+      // TMDb API token V4 versiom
+
+  List<CastMember> cast = [];
+  bool isLoadingCast = true;
+  @override
+  void initState() {
+    super.initState();
+    _loadCast();
+  }
+
+  Future<void> _loadCast() async {
+    final imdbId = widget.movie['imdbID'];
+    if (imdbId == null) {
+      setState(() => isLoadingCast = false);
+      return;
+    }
+
+    final movieId = await tmdbService.getMovieIdByImdb(imdbId);
+    if (movieId == null) {
+      setState(() => isLoadingCast = false);
+      return;
+    }
+
+    final result = await tmdbService.getCast(movieId);
+
+    setState(() {
+      cast = result;
+      isLoadingCast = false;
+    });
+  }
+
 void _showRatingDialog() {
   showDialog(
     context: context,
@@ -134,28 +169,28 @@ void _showRatingDialog() {
                 const SizedBox(width: 12),
 
                 // Rating button
-                _IconButton(
-                  icon: Icons.star_border,
-                  iconColor: Colors.amber,
-                  onTap: _showRatingDialog,
-                  label: "Rate",
-                ),
+                  _IconButton(
+                    icon: Icons.star_border,
+                    iconColor: Colors.amber,
+                    onTap: _showRatingDialog,
+                    label: "Rate",
+                  ),
               ],
             ),
 
 
-                      const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-                      if (userRating != null)
-                        Text(
-                          "Your Rating: ${"★" * userRating!}${"☆" * (5 - userRating!)}",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color.fromARGB(255, 252, 189, 1),
-                          ),
-                        ),
-                    ],
+                if (userRating != null)
+                  Text(
+                    "Your Rating: ${"★" * userRating!}${"☆" * (5 - userRating!)}",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color.fromARGB(255, 252, 189, 1),
+                    ),
+                  ),
+              ],
                   ),
                   
                 ),
@@ -172,6 +207,13 @@ void _showRatingDialog() {
                 style: const TextStyle(fontSize: 16)),
 
             const SizedBox(height: 20),
+            
+            const SizedBox(height: 24),
+
+            if (isLoadingCast)
+              const Center(child: CircularProgressIndicator())
+            else
+              CastStrip(cast: cast),
 
             Container(
               width: double.infinity,
@@ -191,6 +233,7 @@ void _showRatingDialog() {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  
 
                   const SizedBox(height: 8),
 
@@ -209,6 +252,7 @@ void _showRatingDialog() {
     );
   }
 }
+//define the icon button widget
 Widget _IconButton({
   required IconData icon,
   required Color iconColor,

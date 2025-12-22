@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/tmdb_api.dart';
+import '../services/omdb_api.dart';
 import'movie_detail.dart';
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
