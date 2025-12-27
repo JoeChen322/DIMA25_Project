@@ -12,8 +12,12 @@ class LumiListApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      initialRoute: '/',
+
+      // 登录页
+      initialRoute: '/splash',
       routes: appRoutes,
+
+  
     );
   }
 }
