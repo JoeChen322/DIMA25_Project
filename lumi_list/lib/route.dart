@@ -6,7 +6,7 @@ import 'pages/signup_page.dart';
 
 import 'pages/home_page.dart';
 import 'pages/search_page.dart';
-import 'pages/movie_detail.dart';
+//import 'pages/movie_detail.dart';
 import 'pages/my_list.dart';
 
 import 'pages/edit_profile_page.dart';
@@ -23,6 +23,6 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/profile': (context) => const ProfilePage(),
   '/edit_profile': (context) => const EditProfilePage(),
   '/search': (context) => const SearchPage(),
-  '/detail': (context) => const MovieDetailPage(),
+  //'/detail': (context) => const MovieDetailPage(),
   '/mylist': (context) => const MyListPage(),
 };
