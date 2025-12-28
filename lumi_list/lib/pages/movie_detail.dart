@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../widgets/cast_strip.dart';
 import '../models/cast.dart';
 import '../services/tmdb_api.dart';
+import '../database/favorite.dart';
+
 class MovieDetailPage extends StatefulWidget {
   final Map<String, dynamic> movie;
 
@@ -23,8 +25,18 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   @override
   void initState() {
     super.initState();
+    _checkFavorite();
     _loadCast();
   }
+  Future<void> _checkFavorite() async {
+  final imdbId = widget.movie['imdbID'];
+  if (imdbId == null) return;
+
+  final exists = await FavoriteDao.isFavorite(imdbId);
+  setState(() {
+    isFavorite = exists;
+  });
+}
 
   Future<void> _loadCast() async {
     final imdbId = widget.movie['imdbID'];
@@ -136,7 +148,7 @@ void _showRatingDialog() {
             "${movie["Year"] ?? ""} - $director",
             style: const TextStyle(
               fontSize: 14,
-              color: Colors.grey,
+              color: Colors.deepPurple,
             ),
           ),
           const SizedBox(height: 12),
@@ -144,25 +156,49 @@ void _showRatingDialog() {
             Row(
               children: [
                 // List button
+                // onTap to save or remove from favorite list
                 _IconButton(
                   icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                   iconColor: const Color.fromARGB(255, 195, 32, 21),
                   label: "Saves",
-                  onTap: () {
-                    setState(() {
-                      isFavorite = !isFavorite;
-                    });
+                  onTap: () async {
+                    final imdbId = movie["imdbID"]; 
+                    if (imdbId == null) {
+                      print("Error: imdbID is null");
+                      return;
+                    }
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isFavorite
-                              ? "Added to Saves List ❤️"
-                              : "Removed from List 💔",
-                        ),
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
+                    try {
+                      if (!isFavorite) {
+                        // save to database
+                        await FavoriteDao.insertFavorite(
+                          imdbId: imdbId,
+                          title: movie["Title"] ?? "Unknown",
+                          poster: movie["Poster"] ?? "",
+                          rating: userRating, 
+                        );
+                      } else {
+                        //  remove from database
+                        await FavoriteDao.deleteFavorite(imdbId);
+                      }
+
+                      // update UI
+                      setState(() {
+                        isFavorite = !isFavorite;
+                      });
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(isFavorite ? "Added to Saves List ❤️" : "Removed from List 💔"),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      //debug info
+                      print("Database Error: $e"); 
+                    }
                   },
                 ),
 
@@ -175,6 +211,7 @@ void _showRatingDialog() {
                     onTap: _showRatingDialog,
                     label: "Rate",
                   ),
+                
               ],
             ),
 
@@ -220,7 +257,7 @@ void _showRatingDialog() {
               margin: const EdgeInsets.only(top: 20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 158, 158, 158).withOpacity(0.22), // grey background
+                color:  Color.fromARGB(255, 227, 219, 240), // Item color background
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(

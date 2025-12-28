@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
         ),
         centerTitle: true,
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color.fromARGB(255, 227, 219, 240),
         foregroundColor: Colors.white,
       ),
 
@@ -68,7 +68,7 @@ class _HomePageState extends State<HomePage> {
             // 头像区域
             UserAccountsDrawerHeader(
               // 🔥 2. 注意：这里去掉了 const，因为里面用了变量
-              decoration: const BoxDecoration(color: Colors.deepPurple),
+              decoration: const BoxDecoration(color: const Color.fromARGB(255, 227, 219, 240)),
               
               // 🔥 3. 核心修改：这里使用变量 _userName，而不是死文字
               accountName: Text(_userName, style: const TextStyle(fontWeight: FontWeight.bold)),
