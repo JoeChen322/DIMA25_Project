@@ -12,9 +12,9 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    // 倒计时 2 秒，然后跳转
+    // Remain open for 2 seconds before redirecting to the login page.
     Timer(const Duration(seconds: 2), () {
-      // 跳转到登录页，并销毁当前页（用户按返回键回不到启动页）
+      // sink to LoginPage
       Navigator.pushReplacementNamed(context, '/login');
     });
   }
@@ -22,34 +22,30 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 这里的 Scaffold 不需要 AppBar，全屏显示
+      // The Scaffold here does not require an AppBar and displays in full screen.
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        // 统一的深紫色渐变背景
+        // set the background gradient
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.black, Color(0xFF1A1A1A)], // 深紫色渐变
+            colors: [Colors.black, Color(0xFF1A1A1A)], 
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 1. 大 Logo
-            //启动页：改用新的透明图片
-            // lib/pages/splash_page.dart
-
+            // 1. App Logo
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration( //这里加上 const
-                // 🔥 修改这里：把原来的半透明白色改成纯黑色
+              decoration: const BoxDecoration( 
                 color: Colors.black, 
                 shape: BoxShape.circle,
               ),
               child: Image.asset(
-                'assets/icon/icon.png', // 使用你现在的黑底图片
+                'assets/icon/icon.png', // App icon path
                 width: 90, 
                 height: 90,
                 fit: BoxFit.contain,
@@ -58,20 +54,20 @@ class _SplashPageState extends State<SplashPage> {
             
             const SizedBox(height: 30),
             
-            // 2. App 名称
+            // 2. App Name
             const Text(
               "LumiList",
               style: TextStyle(
                 fontSize: 42,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
-                letterSpacing: 3, // 字间距大一点更高级
+                letterSpacing: 3, 
               ),
             ),
             
             const SizedBox(height: 10),
             
-            // 3. Slogan (口号)
+            // 3. Slogan part
             Text(
               "Your Movie Collection",
               style: TextStyle(
@@ -83,7 +79,7 @@ class _SplashPageState extends State<SplashPage> {
 
             const SizedBox(height: 80),
 
-            // 4. 底部小转圈 (表示正在加载)
+            // 4. Loading Indicator
             const CircularProgressIndicator(
               color: Colors.white,
               strokeWidth: 3,

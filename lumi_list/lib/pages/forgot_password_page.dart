@@ -14,7 +14,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // 保持统一背景色
+      backgroundColor: const Color(0xFFF5F5F5), 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -29,7 +29,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 顶部图标
+              // Top icon
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -57,7 +57,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
               const SizedBox(height: 40),
 
-              // --- 表单卡片 ---
+              // Email input field
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Container(
@@ -115,14 +115,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                             setState(() => _isLoading = true);
                             
-                            // 模拟发送邮件请求
+                            // Email request simulation
                             await Future.delayed(const Duration(seconds: 2));
 
                             if (!mounted) return;
                             
                             setState(() => _isLoading = false);
                             
-                            // 成功提示
+                            // Show success dialog
                             showDialog(
                               context: context, 
                               builder: (context) => AlertDialog(
@@ -131,8 +131,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 actions: [
                                   TextButton(
                                     onPressed: () {
-                                      Navigator.pop(context); // 关弹窗
-                                      Navigator.pop(context); // 回登录页
+                                      Navigator.pop(context); 
+                                      Navigator.pop(context); 
                                     }, 
                                     child: const Text("OK")
                                   )

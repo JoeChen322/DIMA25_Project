@@ -14,7 +14,7 @@ class _SignupPageState extends State<SignupPage> {
 
   final Color _primaryColor = Colors.deepPurple;
 
-  // ✨ 新增状态：控制密码显示/隐藏 和 加载状态
+  // New features: Controls password display/hiding and loading status.
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -22,12 +22,12 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // ✅ 保持原来的浅灰背景
+      backgroundColor: const Color(0xFFF5F5F5), 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black), // ✅ 保持黑色箭头
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black), 
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -52,7 +52,7 @@ class _SignupPageState extends State<SignupPage> {
               ),
               const SizedBox(height: 40),
 
-              // --- 注册表单 ---
+              // --- Signup Form ---
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Container(
@@ -81,7 +81,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Password (带小眼睛)
+                      // Password (icon with eye )
                       _buildLabel("Password"),
                       const SizedBox(height: 8),
                       _buildTextField(
@@ -89,7 +89,7 @@ class _SignupPageState extends State<SignupPage> {
                         hintText: "••••••••",
                         icon: Icons.lock_outline,
                         isPassword: true,
-                        // ✨ 绑定状态
+                        // state binding
                         obscureText: _obscurePassword,
                         onToggleVisibility: () {
                           setState(() => _obscurePassword = !_obscurePassword);
@@ -97,7 +97,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Confirm Password (带小眼睛)
+                      // Confirm Password (icon with eye )
                       _buildLabel("Confirm Password"),
                       const SizedBox(height: 8),
                       _buildTextField(
@@ -105,7 +105,7 @@ class _SignupPageState extends State<SignupPage> {
                         hintText: "••••••••",
                         icon: Icons.lock_reset,
                         isPassword: true,
-                        // ✨ 绑定状态
+                        // state binding
                         obscureText: _obscureConfirmPassword,
                         onToggleVisibility: () {
                           setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
@@ -120,7 +120,7 @@ class _SignupPageState extends State<SignupPage> {
                         height: 56,
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : () async {
-                            // 1. 校验逻辑
+                            // 1. logic checks
                             if (_emailController.text.isEmpty || 
                                 _passwordController.text.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -141,13 +141,13 @@ class _SignupPageState extends State<SignupPage> {
                                 return;
                             }
 
-                            // 2. 模拟加载
+                            // 2. Loading simulation
                             setState(() => _isLoading = true);
                             await Future.delayed(const Duration(milliseconds: 150));
 
                             if (!mounted) return;
 
-                            // 3. 成功逻辑
+                            // 3. Finish loading
                             ScaffoldMessenger.of(context).showSnackBar(
                                const SnackBar(content: Text("Account Created! Please Login."), backgroundColor: Colors.green)
                             );
@@ -164,7 +164,7 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                             elevation: 0,
                           ),
-                          // ✨ 加载时显示转圈，否则显示文字
+                          // Loading indicator when loading, otherwise show text
                           child: _isLoading 
                               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                               : const Text("Sign Up", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -177,14 +177,14 @@ class _SignupPageState extends State<SignupPage> {
 
               const SizedBox(height: 30),
 
-              // --- 返回登录 ---
+              // --- Return to Login ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text("Already have an account? ", style: TextStyle(color: Colors.grey[600])),
                   GestureDetector(
                     onTap: () {
-                      Navigator.pop(context); // 返回登录页
+                      Navigator.pop(context); // Return to Login Page
                     },
                     child: Text(
                       "Login",
@@ -207,14 +207,14 @@ class _SignupPageState extends State<SignupPage> {
     return Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey[700]));
   }
 
-  // ✨ 升级后的输入框组件：支持小眼睛切换
+  // Supports switching between small eye icons.
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
     required IconData icon,
     bool isPassword = false,
-    bool obscureText = false, // 外部传入是否隐藏
-    VoidCallback? onToggleVisibility, // 外部传入点击事件
+    bool obscureText = false, // external input for obscuring
+    VoidCallback? onToggleVisibility, // callback for eye icon
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -228,7 +228,6 @@ class _SignupPageState extends State<SignupPage> {
           hintText: hintText,
           hintStyle: TextStyle(color: Colors.grey[400]),
           prefixIcon: Icon(icon, color: Colors.grey[500]),
-          // ✨ 这里加了小眼睛逻辑
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(

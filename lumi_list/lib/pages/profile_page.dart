@@ -9,10 +9,9 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // 1. 修改默认信息为通用文案，不写具体的内容
   String _name = "User Name"; 
   String _bio = "Write something about yourself..."; 
-  String _phone = ""; // 默认留空
+  String _phone = "+39 123 456 7890"; 
   String? _avatarPath;
   bool _isInit = false;
 
@@ -66,7 +65,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    // 2. 整体背景改回浅色
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5), 
       appBar: AppBar(
@@ -90,12 +88,11 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- 头部区域 (紫色渐变) ---
             _buildHeader(),
 
             const SizedBox(height: 20),
 
-            // --- 影视档案 (白色卡片) ---
+            // --- Film and Television Archives ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
@@ -103,7 +100,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   const Text("Movie Archives", style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  // 3. 卡片改成白色 + 阴影
+                  // 3. 
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -111,7 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.deepPurple.withOpacity(0.05), // 紫色淡淡的阴影
+                          color: Colors.deepPurple.withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),
@@ -120,7 +117,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildArchiveItem("Wishlist", "0", ""), // 默认 0
+                        _buildArchiveItem("Wishlist", "0", ""), 
                         _buildArchiveItem("Watching", "0", ""), 
                         _buildArchiveItem("Watched", "0", ""), 
                       ],
@@ -132,7 +129,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 30),
 
-            // --- 我的片单 ---
+            // My Lists
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -165,14 +162,12 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // --- 头部组件 (紫色背景) ---
-// --- 方案四：经典矩形 + 底部微圆角 + 悬浮阴影 ---
+// --- Header component ---
   Widget _buildHeader() {
     return Container(
-      // 增加一点顶部 Padding，适应刘海屏
+      // Add a little top padding to fit the notch screen.
       padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 30),
       decoration: BoxDecoration(
-        // 1. 经典的深紫色垂直渐变 (更显瘦、显高)
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -181,24 +176,22 @@ class _ProfilePageState extends State<ProfilePage> {
             Color(0xFF512DA8), // DeepPurple[700]
           ],
         ),
-        // 2. 只有底部有一点点圆角 (24)，看起来很顺滑，不会像半圆那么夸张
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
-        // 3. 关键：加一点阴影，让它和下面的白色背景分开
         boxShadow: [
           BoxShadow(
             color: Colors.deepPurple.withOpacity(0.3),
             blurRadius: 15,
-            offset: const Offset(0, 8), // 阴影向下
+            offset: const Offset(0, 8), 
           ),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center, // 垂直居中对齐
+        crossAxisAlignment: CrossAxisAlignment.center, 
         children: [
-          // 头像部分
+          // Avatar section
           GestureDetector(
             onTap: _navigateToEdit,
             child: Stack(
@@ -206,11 +199,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 Container(
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2), // 半透明白色边框
+                    color: Colors.white.withOpacity(0.2), 
                     shape: BoxShape.circle,
                   ),
                   child: CircleAvatar(
-                    radius: 40, // 稍微调小一点，更精致
+                    radius: 40, 
                     backgroundColor: Colors.white,
                     backgroundImage: _avatarPath != null 
                         ? FileImage(File(_avatarPath!)) 
@@ -228,7 +221,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     decoration: BoxDecoration(
                       color: Colors.amber,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.deepPurple, width: 2), // 加个边框防止融合
+                      border: Border.all(color: Colors.deepPurple, width: 2), 
                     ),
                     child: const Icon(Icons.edit, size: 12, color: Colors.black),
                   ),
@@ -239,7 +232,7 @@ class _ProfilePageState extends State<ProfilePage> {
           
           const SizedBox(width: 20),
           
-          // 文字部分
+          // Info section
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,14 +283,14 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // --- 影视档案小组件 ---
+  // --- Film and Television Archive Component ---
   Widget _buildArchiveItem(String label, String count, String imageUrl) {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Row(
           children: [
-            // 如果没有图片，显示一个带图标的灰色方块
+            // If no image is displayed, a gray square with an icon is shown.
             Container(
               width: 40, height: 56,
               decoration: BoxDecoration(
@@ -317,7 +310,6 @@ class _ProfilePageState extends State<ProfilePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                // 数字改成黑色
                 Text(count, style: const TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -327,14 +319,14 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // --- 片单小组件 (白底卡片) ---
+  // --- List widget ---
   Widget _buildListItem(Color color, String title, IconData icon) {
     return Container(
       width: 110,
-      margin: const EdgeInsets.only(right: 12, bottom: 5), // bottom 留一点给阴影
+      margin: const EdgeInsets.only(right: 12, bottom: 5), 
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white, // 白底
+        color: Colors.white, 
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
            BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 3)),
@@ -346,7 +338,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1), // 浅色背景圆圈
+              color: color.withOpacity(0.1), 
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 24),

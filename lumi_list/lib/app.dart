@@ -13,7 +13,7 @@ class LumiListApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      // 登录页
+      // Set initial route and define routes
       initialRoute: '/splash',
       routes: appRoutes,
 

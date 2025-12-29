@@ -11,36 +11,34 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _index = 1; // 默认显示中间的 Home
+  int _index = 1; // default to Home tab
 
-  // ... 在 _index = 1; 下面加入 ...
-
-  bool _isInit = false; // 加上这个标记，防止重复刷新
+  bool _isInit = false; // Mark to prevent repeated refreshes
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInit) {
-      // 🕵️‍♂️ 侦查：看看有没有人（比如登录页）给我传了数据？
+      // Detect if there is data passed from the previous page
       final args = ModalRoute.of(context)?.settings.arguments;
       
       if (args != null && args is Map) {
         setState(() {
-          // 如果有，就覆盖掉默认的 "Movie Lover"
+          // Update central profile data if passed
           if (args['name'] != null) _userName = args['name'];
           if (args['bio'] != null) _userBio = args['bio'];
           if (args['avatar'] != null) _drawerAvatarPath = args['avatar'];
         });
       }
-      _isInit = true; // 标记已处理
+      _isInit = true; 
     }
   }
 
-  // 🔥 1. 中央档案室：存住用户的所有信息
+  // Central profile data
   String _userName = "Movie Lover"; 
   String _userBio = "Write something..."; 
   String _userPhone = "";
-  String? _drawerAvatarPath; // 存头像路径
+  String? _drawerAvatarPath; // Path to avatar image in drawer
 
   final List<Widget> _pages = const [
     SearchPage(),
@@ -65,36 +63,35 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // 头像区域
+            // Avatar header
             UserAccountsDrawerHeader(
-              // 🔥 2. 注意：这里去掉了 const，因为里面用了变量
-              decoration: const BoxDecoration(color: const Color.fromARGB(255, 227, 219, 240)),
+              decoration: const BoxDecoration(color: Color.fromARGB(255, 227, 219, 240)),
               
-              // 🔥 3. 核心修改：这里使用变量 _userName，而不是死文字
+              // Use the variable _userName
               accountName: Text(_userName, style: const TextStyle(fontWeight: FontWeight.bold)),
               accountEmail: const Text("hello@example.com"),
               
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                // A. 背景图逻辑
+                // A. Avatar logic
                 backgroundImage: _drawerAvatarPath != null
                     ? FileImage(File(_drawerAvatarPath!))
                     : null,
-                // B. 图标逻辑
+                // B. Fallback icon
                 child: _drawerAvatarPath == null
                     ? const Icon(Icons.person, size: 40, color: Colors.deepPurple)
                     : null,
               ),
             ),
             
-            // My Profile 按钮
+            // My Profile button
             ListTile(
               leading: const Icon(Icons.person_outline, color: Colors.deepPurple),
               title: const Text("My Profile", style: TextStyle(color: Colors.black)),
               onTap: () async {
-                Navigator.pop(context); // 关侧边栏
+                Navigator.pop(context); // Close the drawer
                 
-                // 🔥 4. 关键点：进去时，把“中央档案”传给 ProfilePage
+                // Upon entry, pass the data to ProfilePage.
                 final result = await Navigator.pushNamed(
                   context, 
                   '/profile',
@@ -106,7 +103,7 @@ class _HomePageState extends State<HomePage> {
                   }
                 );
                 
-                // 🔥 5. 关键点：回来时，接收 Map 数据并更新“中央档案”
+                //  update data when returning from ProfilePage
                 if (result != null && result is Map) {
                   setState(() {
                     if (result['name'] != null) _userName = result['name'];
@@ -120,7 +117,7 @@ class _HomePageState extends State<HomePage> {
 
             const Divider(), 
 
-            // 退出按钮
+            //  Log Out button
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
               title: const Text("Log Out", style: TextStyle(color: Colors.redAccent)),

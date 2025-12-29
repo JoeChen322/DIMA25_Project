@@ -12,16 +12,14 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // 🔥 主题色：深紫色
+  // set the primary color
   final Color _primaryColor = Colors.deepPurple; 
 
-  // ✨ 新增状态：控制加载和密码显示
   bool _isLoading = false;
   bool _obscurePassword = true;
 
-  // ✨ 新增逻辑：处理登录
   Future<void> _handleLogin() async {
-    // 收起键盘
+    // Put away the keyboard
     FocusScope.of(context).unfocus();
 
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -31,15 +29,14 @@ class _LoginPageState extends State<LoginPage> {
       return; 
     }
 
-    setState(() => _isLoading = true); // 开始转圈
+    setState(() => _isLoading = true); // initiate loading state
 
-    // 模拟网络延迟
+    // Simulate a network request
     await Future.delayed(const Duration(milliseconds: 150));
 
     if (_passwordController.text == "123456") {
       if (!mounted) return;
       
-      // 登录成功，带着数据去主页！
       Navigator.pushReplacementNamed(
         context, 
         '/',
@@ -51,7 +48,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     } else {
       if (!mounted) return;
-      setState(() => _isLoading = false); // 停，报错
+      setState(() => _isLoading = false); 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Wrong password! Try: 123456"), backgroundColor: Colors.redAccent)
       );
@@ -61,28 +58,21 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // ✅ 保持你的浅灰背景
+      backgroundColor: const Color(0xFFF5F5F5), // Light grey background
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // --- Logo (保持原样) ---
-              // 🌟 登录页：改用新的透明图片
-              // lib/pages/login_page.dart
-
-              // --- Logo 区域 ---
-              // --- 登录页 Logo 区域 ---
-              // --- Login Page Logo 区域 ---
-              // 把它做成一个精致的“App图标”样式
+              // --- Logo and Welcome Text ---
               Container(
                 width: 80, 
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.black, // 背景纯黑
-                  borderRadius: BorderRadius.circular(20), // 🔥 关键：设置圆角 (比如 20)
-                  // 加一点阴影，让它立体起来
+                  color: Colors.black, 
+                  borderRadius: BorderRadius.circular(20), // Rounded corners
+                  // shadow effect
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.2),
@@ -91,11 +81,11 @@ class _LoginPageState extends State<LoginPage> {
                     )
                   ],
                 ),
-                // 裁切掉多余的直角，防止图片溢出
+                // clip the image to rounded corners
                 clipBehavior: Clip.hardEdge, 
                 
                 child: Padding(
-                  padding: const EdgeInsets.all(12.0), // 内部稍微留点呼吸感
+                  padding: const EdgeInsets.all(12.0), 
                   child: Image.asset(
                     'assets/icon/icon.png',
                     fit: BoxFit.contain,
@@ -120,7 +110,7 @@ class _LoginPageState extends State<LoginPage> {
               
               const SizedBox(height: 40),
 
-              // --- 登录卡片 (保持原样) ---
+              // --- Email & Password Fields ---
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Container(
@@ -155,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         hintText: "••••••••",
                         icon: Icons.lock_outline,
-                        isPassword: true, // 开启密码功能
+                        isPassword: true, // indicate it's a password field
                       ),
 
                       Align(
@@ -173,12 +163,12 @@ class _LoginPageState extends State<LoginPage> {
                       
                       const SizedBox(height: 20),
 
-                      // Login Button (只改了这里：加了加载状态)
+                      // Login Button 
                       SizedBox(
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleLogin, // 加载时禁用
+                          onPressed: _isLoading ? null : _handleLogin, // disable when loading
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _primaryColor,
                             foregroundColor: Colors.white,
@@ -205,7 +195,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 40),
 
-              // --- 分割线 (保持原样) ---
+              // --- Divider with "Or login with" ---
               Row(
                 children: [
                   Expanded(child: Divider(color: Colors.grey[300])),
@@ -219,7 +209,7 @@ class _LoginPageState extends State<LoginPage> {
               
               const SizedBox(height: 24),
 
-              // --- Google Login (保持原样) ---
+              // --- Social Login Buttons ---
               SizedBox(
                 width: 400,
                 height: 50,
@@ -248,26 +238,26 @@ class _LoginPageState extends State<LoginPage> {
               
               const SizedBox(height: 30),
               
-              // Sign Up Text (保持原样)
+              // Sign Up Text with tappable "Create Account"
                Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                    Text("New User? ", style: TextStyle(color: Colors.grey[600])),
                   GestureDetector(
                     onTap: () async {
-                        // 🔥 1. 加 await，等待注册页返回结果
+                        // sink to SignupPage
                         final result = await Navigator.pushNamed(context, '/signup');
                         
-                        // 🔥 2. 如果注册成功带回了数据
+                        // Receive data from SignupPage
                         if (result != null && result is Map) {
                           setState(() {
-                            // 自动填入邮箱
+                            // automatic fill in email
                             _emailController.text = result['email'];
-                            // 自动填入密码
+                            // automatic fill in password
                             _passwordController.text = result['password'];
                           });
                           
-                          // 提示用户
+                          // show success snackbar
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text("Info filled! Please click Login."),
@@ -304,7 +294,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ✨ 稍微升级了输入框：加了小眼睛图标
+  // Minimalistic TextField
   Widget _buildMinimalTextField({
     required TextEditingController controller,
     required String hintText,
@@ -319,12 +309,12 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: TextField(
         controller: controller,
-        obscureText: isPassword ? _obscurePassword : false, // 根据状态显示/隐藏
+        obscureText: isPassword ? _obscurePassword : false, // obscure or reveal for password
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(color: Colors.grey[400]),
           prefixIcon: Icon(icon, color: Colors.grey[500]),
-          // 如果是密码框，显示切换按钮
+          // If it's a password field, display the toggle button.
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(

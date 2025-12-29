@@ -10,23 +10,23 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  // 控制器
+  // Controllers for text fields
   late TextEditingController _nameController;
   late TextEditingController _bioController;
   late TextEditingController _phoneController;
   File? _selectedImage;
 
-  // 标记是否初始化过（防止 build 重复刷新）
+  // Mark to prevent repeated refreshes
   bool _isInit = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_isInit) {
-      // 🔥 1. 接收上一个页面传来的数据 (arguments)
+      // Detect if there is data passed from the previous page
       final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       
-      // 如果有数据就填进去，没有就用默认值
+      // Initialize controllers with passed data or default values
       _nameController = TextEditingController(text: args?['name'] ?? "Movie Lover");
       _bioController = TextEditingController(text: args?['bio'] ?? "I love watching sci-fi movies!");
       _phoneController = TextEditingController(text: args?['phone'] ?? "+1 234 567 890");
@@ -69,12 +69,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
           IconButton(
             icon: const Icon(Icons.check),
             onPressed: () {
-              // 🔥 2. 核心修改：把所有数据打包传回去！
+              // Return updated data to previous page
               Navigator.pop(context, {
                 'name': _nameController.text,
                 'bio': _bioController.text,
                 'phone': _phoneController.text,
-                'avatar': _selectedImage?.path, // 把图片路径也带上
+                'avatar': _selectedImage?.path, 
               });
               
               ScaffoldMessenger.of(context).showSnackBar(
