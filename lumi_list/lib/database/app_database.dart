@@ -26,6 +26,19 @@ class AppDatabase {
             rating INTEGER
           )
         ''');
+
+        // User table for authentication
+        await db.execute('''
+          CREATE TABLE users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE,
+            password TEXT,
+            username TEXT,
+            bio TEXT,           
+            phone TEXT,         
+            avatar TEXT         
+          )
+        ''');
       },
     );
   }

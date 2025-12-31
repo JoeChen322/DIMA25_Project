@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:lumi_list/database/app_database.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -13,6 +14,10 @@ class _ProfilePageState extends State<ProfilePage> {
   String _bio = "Write something about yourself..."; 
   String _phone = "+39 123 456 7890"; 
   String? _avatarPath;
+
+  // Add email variable to identify the user in DB
+  String? _email;
+
   bool _isInit = false;
 
   @override
@@ -26,6 +31,7 @@ class _ProfilePageState extends State<ProfilePage> {
           if (args['bio'] != null) _bio = args['bio'];
           if (args['phone'] != null) _phone = args['phone'];
           if (args['avatar'] != null) _avatarPath = args['avatar'];
+          if (args['email'] != null) _email = args['email'];
         });
       }
       _isInit = true;
@@ -51,6 +57,31 @@ class _ProfilePageState extends State<ProfilePage> {
         _phone = result['phone'];
         _avatarPath = result['avatar'];
       });
+
+      _updateUserInDatabase(result['name'], result['bio'], result['phone'], result['avatar']);
+    }
+  }
+
+// Helper function to update SQLite
+  Future<void> _updateUserInDatabase(String newName, String newBio, String newPhone, String? newAvatar) async {
+    if (_email == null) return; // Can't update if we don't know the email
+
+    try {
+      final db = await AppDatabase.database;
+      String cleanEmail = _email!.trim();
+      int count = await db.update(
+        'users', 
+        {
+          'username': newName,
+          'bio': newBio,
+          'phone': newPhone,
+          'avatar': newAvatar, // can be null
+        },
+        where: 'email = ?',
+        whereArgs: [_email],
+      );
+    } catch (e) {
+      print("❌ Error updating database: $e");
     }
   }
 
@@ -147,7 +178,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  _buildListItem(Colors.amber, "Favorites", Icons.star),
+                  _buildListItem(
+                    Colors.amber, 
+                    "Favorites", 
+                    Icons.star,
+                    onTap: () => Navigator.pushNamed(context, '/favorite'),
+                  ),
                   _buildListItem(Colors.redAccent, "Watch Later", Icons.access_time),
                   _buildListItem(Colors.blueAccent, "Classics", Icons.movie_filter),
                   _buildListItem(Colors.purple, "Custom List", Icons.add),
@@ -320,36 +356,39 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // --- List widget ---
-  Widget _buildListItem(Color color, String title, IconData icon) {
-    return Container(
-      width: 110,
-      margin: const EdgeInsets.only(right: 12, bottom: 5), 
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white, 
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-           BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 3)),
-        ]
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1), 
-              shape: BoxShape.circle,
+  Widget _buildListItem(Color color, String title, IconData icon, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 110,
+        margin: const EdgeInsets.only(right: 12, bottom: 5), 
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white, 
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+             BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 3)),
+          ]
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1), 
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
             ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
       ),
     );
   }

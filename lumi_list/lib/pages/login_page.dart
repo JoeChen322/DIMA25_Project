@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+//database
+import 'package:lumi_list/database/app_database.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -19,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
 
   Future<void> _handleLogin() async {
-    // Put away the keyboard
+    // 1. Dismiss keyboard
     FocusScope.of(context).unfocus();
 
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -29,29 +32,56 @@ class _LoginPageState extends State<LoginPage> {
       return; 
     }
 
-    setState(() => _isLoading = true); // initiate loading state
+    setState(() => _isLoading = true); // show loading indicator
 
-    // Simulate a network request
-    await Future.delayed(const Duration(milliseconds: 150));
+    try {
+      // 2. Get database instance
+      // singleton you wrote in app_database.dart.
+      final db = await AppDatabase.database;
 
-    if (_passwordController.text == "123456") {
-      if (!mounted) return;
-      
-      Navigator.pushReplacementNamed(
-        context, 
-        '/',
-        arguments: {
-          'name': _emailController.text.split('@')[0], 
-          'bio': 'Logged in via email',
-          'avatar': null, 
-        }
+      // 3. Query the users table
+      // Search the users table for rows where both the email and password match.
+      List<Map> result = await db.query(
+        'users',
+        where: 'email = ? AND password = ?',
+        whereArgs: [_emailController.text, _passwordController.text],
       );
-    } else {
-      if (!mounted) return;
-      setState(() => _isLoading = false); 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Wrong password! Try: 123456"), backgroundColor: Colors.redAccent)
-      );
+
+      // Simulate network delay for better UX
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!mounted) return; // safety check
+
+      // 4. Handle query result
+      if (result.isNotEmpty) {
+        var user = result.first; // Get the first matching data
+
+        Navigator.pushReplacementNamed(
+          context, 
+          '/', 
+          arguments: {
+            // Use the real username stored in the database.
+            'name': user['username'], 
+            'bio': user['bio'] ?? 'Write something about yourself...',
+            'phone': user['phone'] ?? '+39 123 456 7890',
+            'avatar': user['avatar'], 
+            'email': user['email'],
+          }
+        );
+      } else {
+        // Invalid credentials
+        setState(() => _isLoading = false); 
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Invalid email or password"), 
+            backgroundColor: Colors.redAccent
+          )
+        );
+      }
+    } catch (e) {
+      // Database error
+      setState(() => _isLoading = false);
+      print("Database Error: $e");
     }
   }
 
@@ -152,7 +182,7 @@ class _LoginPageState extends State<LoginPage> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, '/forgot_password'); // 跳转忘记密码页
+                            Navigator.pushNamed(context, '/forgot_password'); // sink to ForgotPasswordPage
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: _primaryColor,

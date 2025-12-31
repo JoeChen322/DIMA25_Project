@@ -26,7 +26,9 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           // Update central profile data if passed
           if (args['name'] != null) _userName = args['name'];
+          if (args['email'] != null) _userEmail = args['email'];
           if (args['bio'] != null) _userBio = args['bio'];
+          if (args['phone'] != null) _userPhone = args['phone'];
           if (args['avatar'] != null) _drawerAvatarPath = args['avatar'];
         });
       }
@@ -39,6 +41,7 @@ class _HomePageState extends State<HomePage> {
   String _userBio = "Write something..."; 
   String _userPhone = "";
   String? _drawerAvatarPath; // Path to avatar image in drawer
+  String? _userEmail;
 
   final List<Widget> _pages = const [
     SearchPage(),
@@ -55,7 +58,7 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
         ),
         centerTitle: true,
-        backgroundColor: const Color.fromARGB(255, 227, 219, 240),
+        backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
 
@@ -68,8 +71,13 @@ class _HomePageState extends State<HomePage> {
               decoration: const BoxDecoration(color: Color.fromARGB(255, 227, 219, 240)),
               
               // Use the variable _userName
-              accountName: Text(_userName, style: const TextStyle(fontWeight: FontWeight.bold)),
-              accountEmail: const Text("hello@example.com"),
+              accountName: Text(
+                _userName,
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+              accountEmail: Text(
+                _userEmail ?? "Guest",
+                style: const TextStyle(color: Colors.deepPurple),
+                ),
               
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
@@ -100,6 +108,7 @@ class _HomePageState extends State<HomePage> {
                     'bio': _userBio,
                     'phone': _userPhone,
                     'avatar': _drawerAvatarPath,
+                    'email': _userEmail,
                   }
                 );
                 

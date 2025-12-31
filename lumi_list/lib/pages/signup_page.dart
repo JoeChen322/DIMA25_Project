@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// 1. Import your database helper
+import 'package:lumi_list/database/app_database.dart'; 
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -14,7 +16,6 @@ class _SignupPageState extends State<SignupPage> {
 
   final Color _primaryColor = Colors.deepPurple;
 
-  // New features: Controls password display/hiding and loading status.
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -81,7 +82,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Password (icon with eye )
+                      // Password
                       _buildLabel("Password"),
                       const SizedBox(height: 8),
                       _buildTextField(
@@ -89,7 +90,6 @@ class _SignupPageState extends State<SignupPage> {
                         hintText: "••••••••",
                         icon: Icons.lock_outline,
                         isPassword: true,
-                        // state binding
                         obscureText: _obscurePassword,
                         onToggleVisibility: () {
                           setState(() => _obscurePassword = !_obscurePassword);
@@ -97,7 +97,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Confirm Password (icon with eye )
+                      // Confirm Password
                       _buildLabel("Confirm Password"),
                       const SizedBox(height: 8),
                       _buildTextField(
@@ -105,7 +105,6 @@ class _SignupPageState extends State<SignupPage> {
                         hintText: "••••••••",
                         icon: Icons.lock_reset,
                         isPassword: true,
-                        // state binding
                         obscureText: _obscureConfirmPassword,
                         onToggleVisibility: () {
                           setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
@@ -119,8 +118,9 @@ class _SignupPageState extends State<SignupPage> {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
+                          // Disable button while loading
                           onPressed: _isLoading ? null : () async {
-                            // 1. logic checks
+                            // --- 1. Validation Logic ---
                             if (_emailController.text.isEmpty || 
                                 _passwordController.text.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -141,20 +141,54 @@ class _SignupPageState extends State<SignupPage> {
                                 return;
                             }
 
-                            // 2. Loading simulation
+                            // --- 2. Database Insertion Logic ---
                             setState(() => _isLoading = true);
-                            await Future.delayed(const Duration(milliseconds: 150));
 
-                            if (!mounted) return;
+                            try {
+                              // Get the database instance
+                              final db = await AppDatabase.database;
 
-                            // 3. Finish loading
-                            ScaffoldMessenger.of(context).showSnackBar(
-                               const SnackBar(content: Text("Account Created! Please Login."), backgroundColor: Colors.green)
-                            );
-                            Navigator.pop(context, {
-                              'email': _emailController.text,
-                              'password': _passwordController.text,
-                            });
+                              // Create a default username (e.g., "chriss" from "chriss@gmail.com")
+                              String defaultUsername = _emailController.text.split('@')[0];
+
+                              // Insert into 'users' table
+                              await db.insert('users', {
+                                'email': _emailController.text,
+                                'password': _passwordController.text, // In real apps, hash this!
+                                'username': defaultUsername,
+                              });
+
+                              if (!mounted) return;
+
+                              // Success!
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                 const SnackBar(content: Text("Account Created! Please Login."), backgroundColor: Colors.green)
+                              );
+                              
+                              // Return to Login Page
+                              Navigator.pop(context, {
+                                'email': _emailController.text,
+                                'password': _passwordController.text,
+                              });
+
+                            } catch (e) {
+                              // Handle errors (like duplicate email)
+                              print("Sign up error: $e");
+                              if (!mounted) return;
+
+                              String errorMessage = "Registration failed";
+                              // Check if error is because email already exists (Unique constraint)
+                              if (e.toString().contains("UNIQUE constraint failed")) {
+                                errorMessage = "This email is already registered.";
+                              }
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                 SnackBar(content: Text(errorMessage), backgroundColor: Colors.redAccent)
+                              );
+                            } finally {
+                              // Stop loading spinner regardless of success or failure
+                              if (mounted) setState(() => _isLoading = false);
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _primaryColor,
@@ -164,7 +198,6 @@ class _SignupPageState extends State<SignupPage> {
                             ),
                             elevation: 0,
                           ),
-                          // Loading indicator when loading, otherwise show text
                           child: _isLoading 
                               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                               : const Text("Sign Up", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -207,14 +240,13 @@ class _SignupPageState extends State<SignupPage> {
     return Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey[700]));
   }
 
-  // Supports switching between small eye icons.
   Widget _buildTextField({
     required TextEditingController controller,
     required String hintText,
     required IconData icon,
     bool isPassword = false,
-    bool obscureText = false, // external input for obscuring
-    VoidCallback? onToggleVisibility, // callback for eye icon
+    bool obscureText = false,
+    VoidCallback? onToggleVisibility,
   }) {
     return Container(
       decoration: BoxDecoration(
