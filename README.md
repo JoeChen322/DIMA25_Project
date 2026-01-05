@@ -11,7 +11,7 @@
 - Generate the rank of the movie list based on some rules.
 - Based on the taste of the user, recommend users the movies they may like.
 ## FOR THE FILE
-- /database/app_database : to define the datacase using Sqlite 
+- /database/app_database : to define the database using Sqlite 
 - /database/favorite :  add the movies which users click the ❤ button to the davorite movie list.
 - /pages/widgets : define the format style (not used yet)
 - /pages/search_page: using OMDB api,  could search movie by its title, support uzzy search (to do :return order by the similrity)
