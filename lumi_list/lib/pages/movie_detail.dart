@@ -257,7 +257,7 @@ void _showRatingDialog() {
               margin: const EdgeInsets.only(top: 20),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color:  Color.fromARGB(255, 227, 219, 240), // Item color background
+                color:  const Color.fromARGB(255, 227, 219, 240), // Item color background
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(

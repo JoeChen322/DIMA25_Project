@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/omdb_api.dart';
-import'movie_detail.dart';
+import 'movie_detail.dart';
+import '../utils/relevance.dart';
+
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -10,107 +12,138 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _controller = TextEditingController();
-  Map<String, dynamic>? movieData;
+
+  List<Map<String, dynamic>> movies = [];
   bool loading = false;
   String? errorMessage;
 
-  void _search() async {
+  Future<void> _search() async {
     final query = _controller.text.trim();
     if (query.isEmpty) return;
 
     setState(() {
       loading = true;
       errorMessage = null;
-      movieData = null;
+      movies = [];
     });
 
-    final data = await OmdbApi.searchMovie(query);
-
+    final result = await OmdbApi.searchMovies(query);
+    // Sort by relevance
+    result.sort((a, b) 
+    {
+    final scoreB = relevanceScore(b['Title'] ?? '', query);
+    final scoreA = relevanceScore(a['Title'] ?? '', query);
+    print('Movie: ${a['Title']} Score: $scoreA vs ${b['Title']} Score: $scoreB');
+    return scoreB.compareTo(scoreA);
+    });
     setState(() {
       loading = false;
-      if (data == null) {
-        errorMessage = "Did not find movie: $query, please try again.";
+      if (result.isEmpty) {
+        errorMessage = 'No movies found for "$query"';
       } else {
-        movieData = data;
+        movies = result;
       }
     });
   }
 
-  Widget _buildRatings(List ratings) {
-    String imdb = movieData?["imdbRating"] ?? "N/A";
-    String? rotten;
-    String? meta;
-
-    for (var r in ratings) {
-      if (r["Source"] == "Rotten Tomatoes") rotten = r["Value"];
-      if (r["Source"] == "Metacritic") meta = r["Value"];
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("IMDb：$imdb", style: const TextStyle(fontSize: 18)),
-        Text("Rotten Tomatoes：${rotten ?? "N/A"}", style: const TextStyle(fontSize: 18)),
-        Text("Metascore：${meta ?? "N/A"}", style: const TextStyle(fontSize: 18)),
-      ],
-    );
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Search Movie Here")),
+      appBar: AppBar(
+        title: const Text("Search Movie"),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // search bar
             TextField(
               controller: _controller,
+              onSubmitted: (_) => _search(),
               decoration: InputDecoration(
-                hintText: "Enter Movie name, Actor name...",
+                hintText: "Enter movie name...",
+                prefixIcon: const Icon(Icons.search),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.search),
+                  icon: const Icon(Icons.arrow_forward),
                   onPressed: _search,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
 
-            if (loading) const CircularProgressIndicator(),
+            const SizedBox(height: 16),
 
+            // Loading
+            if (loading)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              ),
+
+            // Error
             if (errorMessage != null)
-              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
-
-          if (movieData != null)
-              Expanded(
-                child: ListView(
-                  children: [
-                    Card(
-                      child: ListTile(
-                        leading: movieData!["Poster"] != null &&
-                                movieData!["Poster"] != "N/A"
-                            ? Image.network(movieData!["Poster"], width: 50)
-                            : const Icon(Icons.movie),
-
-                        title: Text(movieData!["Title"] ?? ""),
-                        //subtitle: Text("IMDb: ${movieData!["imdbRating"] ?? "N/A"}"),
-
-                        trailing: const Icon(Icons.arrow_forward_ios),
-
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => MovieDetailPage(movie: movieData!),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  errorMessage!,
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
 
+            // Results list
+            if (movies.isNotEmpty)
+              Expanded(
+                child: ListView.builder(
+                  itemCount: movies.length,
+                  itemBuilder: (context, index) {
+                    final movie = movies[index];
+
+                    return Card(
+                      child: ListTile(
+                        leading: movie["Poster"] != null &&
+                                movie["Poster"] != "N/A"
+                            ? Image.network(
+                                movie["Poster"],
+                                width: 50,
+                                fit: BoxFit.cover,
+                              )
+                            : const Icon(Icons.movie),
+
+                        title: Text(movie["Title"] ?? ""),
+                        subtitle: Text(movie["Year"] ?? ""),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+
+                        onTap: () async {
+                          final imdbId = movie["imdbID"];
+                          if (imdbId == null) return;
+
+                          
+                          final fullMovie =
+                              await OmdbApi.getMovieById(imdbId);
+
+                          if (fullMovie != null && context.mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    MovieDetailPage(movie: fullMovie),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
           ],
         ),
       ),

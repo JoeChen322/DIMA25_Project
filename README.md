@@ -12,8 +12,8 @@
 - Based on the taste of the user, recommend users the movies they may like.
 ## FOR THE FILE
 - /database/app_database : to define the database using Sqlite 
-- /database/favorite :  add the movies which users click the ❤ button to the davorite movie list.
+- /database/favorite :  add the movies which users click the ❤ button to the favorite movie list.
 - /pages/widgets : define the format style (not used yet)
-- /pages/search_page: using OMDB api,  could search movie by its title, support uzzy search (to do :return order by the similrity)
+- /pages/search_page: using OMDB API (in /lib/service),  could search movie by its title, support fuzzy search (to do :return order by the similarity)
 - /pages/movie_detail : show the movie info and the actors info, support to rating and add the movie to the favorite list
 
