@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'search_page.dart';
 import 'my_list.dart';
-import 'dart:io';
-
+import 'movie_detail.dart';
+import '../services/tmdb_api.dart';
+import'../services/omdb_api.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -11,156 +12,207 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _index = 1; // default to Home tab
+  int _index = 1; 
 
-  bool _isInit = false; // Mark to prevent repeated refreshes
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInit) {
-      // Detect if there is data passed from the previous page
-      final args = ModalRoute.of(context)?.settings.arguments;
-      
-      if (args != null && args is Map) {
-        setState(() {
-          // Update central profile data if passed
-          if (args['name'] != null) _userName = args['name'];
-          if (args['email'] != null) _userEmail = args['email'];
-          if (args['bio'] != null) _userBio = args['bio'];
-          if (args['phone'] != null) _userPhone = args['phone'];
-          if (args['avatar'] != null) _drawerAvatarPath = args['avatar'];
-        });
-      }
-      _isInit = true; 
+  // 页面切换逻辑
+  Widget _buildBody() {
+    switch (_index) {
+      case 0:
+        return const SearchPage();
+      case 2:
+        return const MyListPage();
+      default:
+        return const HomeContent(); 
     }
   }
-
-  // Central profile data
-  String _userName = "Movie Lover"; 
-  String _userBio = "Write something..."; 
-  String _userPhone = "";
-  String? _drawerAvatarPath; // Path to avatar image in drawer
-  String? _userEmail;
-
-  final List<Widget> _pages = const [
-    SearchPage(),
-    HomeContent(),
-    MyListPage(),
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true, // 让海报延伸到状态栏
+      
       appBar: AppBar(
-        title: const Text(
-          "LumiList", 
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
-        ),
+        title: const Text("LumiList", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.transparent, 
+        elevation: 0,
         foregroundColor: Colors.white,
       ),
 
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            // Avatar header
-            UserAccountsDrawerHeader(
-              decoration: const BoxDecoration(color: Color.fromARGB(255, 227, 219, 240)),
-              
-              // Use the variable _userName
-              accountName: Text(
-                _userName,
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple)),
-              accountEmail: Text(
-                _userEmail ?? "Guest",
-                style: const TextStyle(color: Colors.deepPurple),
-                ),
-              
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
-                // A. Avatar logic
-                backgroundImage: _drawerAvatarPath != null
-                    ? FileImage(File(_drawerAvatarPath!))
-                    : null,
-                // B. Fallback icon
-                child: _drawerAvatarPath == null
-                    ? const Icon(Icons.person, size: 40, color: Colors.deepPurple)
-                    : null,
+        child: Container(
+          color: Colors.grey[900],
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const DrawerHeader(
+                decoration: BoxDecoration(color: Colors.deepPurple),
+                child: Text("Menu", style: TextStyle(color: Colors.white, fontSize: 24)),
               ),
-            ),
-            
-            // My Profile button
-            ListTile(
-              leading: const Icon(Icons.person_outline, color: Colors.deepPurple),
-              title: const Text("My Profile", style: TextStyle(color: Colors.black)),
-              onTap: () async {
-                Navigator.pop(context); // Close the drawer
-                
-                // Upon entry, pass the data to ProfilePage.
-                final result = await Navigator.pushNamed(
-                  context, 
-                  '/profile',
-                  arguments: {
-                    'name': _userName,
-                    'bio': _userBio,
-                    'phone': _userPhone,
-                    'avatar': _drawerAvatarPath,
-                    'email': _userEmail,
-                  }
-                );
-                
-                //  update data when returning from ProfilePage
-                if (result != null && result is Map) {
-                  setState(() {
-                    if (result['name'] != null) _userName = result['name'];
-                    if (result['bio'] != null) _userBio = result['bio'];
-                    if (result['phone'] != null) _userPhone = result['phone'];
-                    if (result['avatar'] != null) _drawerAvatarPath = result['avatar'];
-                  });
-                }
-              },
-            ),
-
-            const Divider(), 
-
-            //  Log Out button
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text("Log Out", style: TextStyle(color: Colors.redAccent)),
-              onTap: () {
-                Navigator.pop(context); 
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-            ),
-          ],
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.redAccent),
+                title: const Text("Log Out", style: TextStyle(color: Colors.white)),
+                onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+              ),
+            ],
+          ),
         ),
       ),
-      
-      body: _pages[_index],
-      
+
+      body: _buildBody(),
+
       bottomNavigationBar: NavigationBar(
+        backgroundColor: Colors.black,
+        indicatorColor: Colors.deepPurple.withOpacity(0.5),
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.search), label: "Search"),
-          NavigationDestination(icon: Icon(Icons.home), label: "Home"),
-          NavigationDestination(icon: Icon(Icons.list), label: "My List"),
+          NavigationDestination(icon: Icon(Icons.search, color: Colors.white), label: "Search"),
+          NavigationDestination(icon: Icon(Icons.home, color: Colors.white), label: "Home"),
+          NavigationDestination(icon: Icon(Icons.list, color: Colors.white), label: "My List"),
         ],
       ),
     );
   }
 }
 
-class HomeContent extends StatelessWidget {
+class HomeContent extends StatefulWidget {
   const HomeContent({super.key});
 
   @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  final TmdbService tmdbService = TmdbService(
+      'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
+
+  List<dynamic> _trendingMovies = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMovies();
+  }
+
+  Future<void> _fetchMovies() async {
+    try {
+      final movies = await tmdbService.getTrendingMovies();
+      if (mounted) {
+        setState(() {
+          _trendingMovies = movies;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Fetch error: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // 统一的跳转方法
+  void _navigateToDetail(dynamic movie) {
+    // 注意：OMDb 数据格式和 TMDb 不同，详情页需要适配或在此转换
+    // 这里我们将 TMDb 数据模拟成你详情页需要的格式
+    final Map<String, dynamic> movieData = {
+      "Title": movie['title'] ?? movie['name'],
+      "Year": movie['release_date']?.split('-')[0] ?? "",
+      "Poster": "https://image.tmdb.org/t/p/w500${movie['poster_path']}",
+      "Plot": movie['overview'],
+      "imdbID": null, // TMDb 数据默认没带 imdbID，建议在详情页通过 tmdbService 获取
+      "imdbRating": movie['vote_average']?.toString(),
+    };
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MovieDetailPage(movie: movieData),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text("LumiList Home – Trending, Recommendations Coming Soon"),
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_trendingMovies.isEmpty) return const Center(child: Text("No data", style: TextStyle(color: Colors.white)));
+
+    final topMovie = _trendingMovies[0];
+    final String posterUrl = "https://image.tmdb.org/t/p/w780${topMovie['poster_path']}";
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // 2. 点击大海报进入详情
+          GestureDetector(
+            onTap: () => _navigateToDetail(topMovie),
+            child: Container(
+              height: MediaQuery.of(context).size.height * 0.7,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                image: DecorationImage(image: NetworkImage(posterUrl), fit: BoxFit.cover),
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black],
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      topMovie['title'] ?? topMovie['name'] ?? "Untitled",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text("Trending Now", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+            ),
+          ),
+          
+          SizedBox(
+            height: 200,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _trendingMovies.length,
+              itemBuilder: (context, index) {
+                final movie = _trendingMovies[index];
+                // 3. 点击列表小海报进入详情
+                return GestureDetector(
+                  onTap: () => _navigateToDetail(movie),
+                  child: Container(
+                    width: 130,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      image: DecorationImage(
+                        image: NetworkImage("https://image.tmdb.org/t/p/w342${movie['poster_path']}"),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 50),
+        ],
+      ),
     );
   }
 }

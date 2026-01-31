@@ -58,4 +58,22 @@ Future<List<CastMember>> getCast(int movieId) async {
   }
 }
 
+// add new movie on show 
+Future<List<dynamic>> getTrendingMovies() async {
+  try {
+    final res = await Dio().get(
+      '$_baseUrl/trending/all/day',
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ),
+    );
+    return res.data['results'] as List;
+  } catch (e) {
+    debugPrint('TMDb trending error: $e');
+    return [];
+  }
+}
 }
