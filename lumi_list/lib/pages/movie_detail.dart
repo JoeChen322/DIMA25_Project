@@ -38,26 +38,29 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   });
 }
 
-  Future<void> _loadCast() async {
-    final imdbId = widget.movie['imdbID'];
-    if (imdbId == null) {
-      setState(() => isLoadingCast = false);
-      return;
-    }
-
-    final movieId = await tmdbService.getMovieIdByImdb(imdbId);
-    if (movieId == null) {
-      setState(() => isLoadingCast = false);
-      return;
-    }
-
-    final result = await tmdbService.getCast(movieId);
-
-    setState(() {
-      cast = result;
-      isLoadingCast = false;
-    });
+// 在 movie_detail.dart 中找到 _loadCast
+Future<void> _loadCast() async {
+  final imdbId = widget.movie['imdbID']; // 获取 tt123456 格式 ID
+  if (imdbId == null) {
+    setState(() => isLoadingCast = false);
+    return;
   }
+
+  // 使用你已有的 getMovieIdByImdb 方法将 tt 号转回 TMDb 数字 ID
+  final movieId = await tmdbService.getMovieIdByImdb(imdbId);
+  if (movieId == null) {
+    setState(() => isLoadingCast = false);
+    return;
+  }
+
+  // 获取演员表
+  final result = await tmdbService.getCast(movieId);
+
+  setState(() {
+    cast = result;
+    isLoadingCast = false;
+  });
+}
 
 void _showRatingDialog() {
   showDialog(

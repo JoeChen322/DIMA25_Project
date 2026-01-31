@@ -42,25 +42,7 @@ class _HomePageState extends State<HomePage> {
         foregroundColor: Colors.white,
       ),
 
-      drawer: Drawer(
-        child: Container(
-          color: Colors.grey[900],
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              const DrawerHeader(
-                decoration: BoxDecoration(color: Colors.deepPurple),
-                child: Text("Menu", style: TextStyle(color: Colors.white, fontSize: 24)),
-              ),
-              ListTile(
-                leading: const Icon(Icons.logout, color: Colors.redAccent),
-                title: const Text("Log Out", style: TextStyle(color: Colors.white)),
-                onTap: () => Navigator.pushReplacementNamed(context, '/login'),
-              ),
-            ],
-          ),
-        ),
-      ),
+      
 
       body: _buildBody(),
 
@@ -125,18 +107,23 @@ class _HomeContentState extends State<HomeContent> {
   }
 
   // 统一的跳转方法
-  void _navigateToDetail(dynamic movie) {
-    // 注意：OMDb 数据格式和 TMDb 不同，详情页需要适配或在此转换
-    // 这里我们将 TMDb 数据模拟成你详情页需要的格式
-    final Map<String, dynamic> movieData = {
-      "Title": movie['title'] ?? movie['name'],
-      "Year": movie['release_date']?.split('-')[0] ?? "",
-      "Poster": "https://image.tmdb.org/t/p/w500${movie['poster_path']}",
-      "Plot": movie['overview'],
-      "imdbID": null, // TMDb 数据默认没带 imdbID，建议在详情页通过 tmdbService 获取
-      "imdbRating": movie['vote_average']?.toString(),
-    };
+  void _navigateToDetail(dynamic movie) async {
+  // 1. 获取 TMDb 数字 ID
+  final int tmdbId = movie['id'];
+  
+  // 2. 调用新方法换取真正的 imdbID (tt号)
+  final String? realImdbId = await tmdbService.getImdbIdByTmdbId(tmdbId);
 
+  final Map<String, dynamic> movieData = {
+    "Title": movie['title'] ?? movie['name'],
+    "Year": movie['release_date']?.split('-')[0] ?? "",
+    "Poster": "https://image.tmdb.org/t/p/w500${movie['poster_path']}", // TMDb 图片拼接
+    "Plot": movie['overview'],
+    "imdbID": realImdbId, // 现在有了真正的 tt 号，收藏功能就能正常工作了
+    "imdbRating": movie['vote_average']?.toString(),
+  };
+
+  if (mounted) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -144,7 +131,7 @@ class _HomeContentState extends State<HomeContent> {
       ),
     );
   }
-
+}
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());

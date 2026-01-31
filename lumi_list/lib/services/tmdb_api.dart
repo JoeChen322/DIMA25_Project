@@ -76,4 +76,25 @@ Future<List<dynamic>> getTrendingMovies() async {
     return [];
   }
 }
+
+// 在 TmdbService 类中添加
+Future<String?> getImdbIdByTmdbId(int tmdbId) async {
+  try {
+    // 访问具体电影详情接口
+    final res = await Dio().get(
+      '$_baseUrl/movie/$tmdbId',
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token', // 必须使用你的 V4 Token
+          'Accept': 'application/json',
+        },
+      ),
+    );
+    // 返回 imdb_id，例如 "tt1546052"
+    return res.data['imdb_id'];
+  } catch (e) {
+    debugPrint('TMDb 获取详情失败: $e');
+    return null;
+  }
+}
 }
