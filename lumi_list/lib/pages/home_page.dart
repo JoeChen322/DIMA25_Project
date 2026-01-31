@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'search_page.dart';
-import 'my_list.dart';
+import 'me.dart';
 import 'movie_detail.dart';
 import '../services/tmdb_api.dart';
 import'../services/omdb_api.dart';
@@ -32,7 +32,9 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true, // 让海报延伸到状态栏
       
-      appBar: AppBar(
+      appBar: _index == 2 
+    ? null  // 当处于 "Me" 页面时，移除外层的 AppBar
+    : AppBar(
         title: const Text("LumiList", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.transparent, 
@@ -64,13 +66,23 @@ class _HomePageState extends State<HomePage> {
 
       bottomNavigationBar: NavigationBar(
         backgroundColor: Colors.black,
+        height: 65,
         indicatorColor: Colors.deepPurple.withOpacity(0.5),
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.search, color: Colors.white), label: "Search"),
-          NavigationDestination(icon: Icon(Icons.home, color: Colors.white), label: "Home"),
-          NavigationDestination(icon: Icon(Icons.list, color: Colors.white), label: "My List"),
+          NavigationDestination(
+      icon: Icon(Icons.search, color: Colors.white, size: 22), // 稍微减小图标尺寸
+      label: "Search",
+    ),
+          NavigationDestination(
+      icon: Icon(Icons.home, color: Colors.white, size: 22), 
+      label: "Home",
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.person, color: Colors.white, size: 22), 
+      label: "Me",
+    ),
         ],
       ),
     );
