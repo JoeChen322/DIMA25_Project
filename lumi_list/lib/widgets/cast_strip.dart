@@ -18,13 +18,7 @@ class CastStrip extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Cast',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        
         const SizedBox(height: 8),
         SizedBox(
           height: 150,
