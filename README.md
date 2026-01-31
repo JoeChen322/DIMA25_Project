@@ -16,4 +16,10 @@
 - /pages/widgets : define the format style (not used yet)
 - /pages/search_page: using OMDB API (in /lib/service),  could search movie by its title, support fuzzy search (to do :return order by the similarity)
 - /pages/movie_detail : show the movie info and the actors info, support to rating and add the movie to the favorite list
-
+## TODO
+- pull down to show the complete poster
+- fold when the summary is too long
+- hide the items without the poster
+- adjust search relevance
+- connect database to my favourite
+- build database for the personal rating
