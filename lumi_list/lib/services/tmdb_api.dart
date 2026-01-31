@@ -97,4 +97,29 @@ Future<String?> getImdbIdByTmdbId(int tmdbId) async {
     return null;
   }
 }
+
+// tmdb_api.dart
+
+Future<List<dynamic>> searchMovies(String query) async {
+  try {
+    final res = await Dio().get(
+      '$_baseUrl/search/movie',
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ),
+      queryParameters: {
+        'query': query,
+        'language': 'en-US',
+        'page': 1,
+      },
+    );
+    return res.data['results'] ?? [];
+  } catch (e) {
+    debugPrint('TMDb search error: $e');
+    return [];
+  }
+}
 }

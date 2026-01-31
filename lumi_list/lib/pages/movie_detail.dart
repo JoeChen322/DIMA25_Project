@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/cast_strip.dart';
 import '../models/cast.dart';
 import '../services/tmdb_api.dart';
+import '../services/omdb_api.dart'; 
 import '../database/favorite.dart';
 
 class MovieDetailPage extends StatefulWidget {
@@ -14,321 +15,224 @@ class MovieDetailPage extends StatefulWidget {
 }
 
 class _MovieDetailPageState extends State<MovieDetailPage> {
-  bool isFavorite = false; // add to the list（wait for the page set up）
-  int? userRating; // user rating score 1-5
-  final TmdbService tmdbService =
-      TmdbService('eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
-      // TMDb API token V4 versiom
+  bool isFavorite = false;
+  int? userRating; // 1. 定义用户评分变量
+  
+  final TmdbService tmdbService = TmdbService(
+      'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
 
   List<CastMember> cast = [];
   bool isLoadingCast = true;
+  String? realImdbId; 
+  Map<String, dynamic>? fullOmdbData; // 用于存储多平台评分数据
+
   @override
   void initState() {
     super.initState();
-    _checkFavorite();
-    _loadCast();
-  }
-  Future<void> _checkFavorite() async {
-  final imdbId = widget.movie['imdbID'];
-  if (imdbId == null) return;
-
-  final exists = await FavoriteDao.isFavorite(imdbId);
-  setState(() {
-    isFavorite = exists;
-  });
-}
-
-// 在 movie_detail.dart 中找到 _loadCast
-Future<void> _loadCast() async {
-  final imdbId = widget.movie['imdbID']; // 获取 tt123456 格式 ID
-  if (imdbId == null) {
-    setState(() => isLoadingCast = false);
-    return;
+    _initializeData();
   }
 
-  // 使用你已有的 getMovieIdByImdb 方法将 tt 号转回 TMDb 数字 ID
-  final movieId = await tmdbService.getMovieIdByImdb(imdbId);
-  if (movieId == null) {
-    setState(() => isLoadingCast = false);
-    return;
+  Future<void> _initializeData() async {
+    String? id = widget.movie['imdbID']; 
+    int? tmdbId;
+
+    // 2. ID 转换逻辑
+    if (id != null && !id.startsWith('tt')) {
+      tmdbId = int.parse(id);
+      realImdbId = await tmdbService.getImdbIdByTmdbId(tmdbId);
+    } else if (id != null && id.startsWith('tt')) {
+      realImdbId = id;
+      tmdbId = await tmdbService.getMovieIdByImdb(id);
+    }
+
+    // 3. 并行加载：演员 (TMDb) + 完整详情 (OMDb)
+    if (tmdbId != null) _loadCast(tmdbId);
+
+    if (realImdbId != null) {
+      final omdbData = await OmdbApi.getMovieById(realImdbId!);
+      final favoriteStatus = await FavoriteDao.isFavorite(realImdbId!);
+      if (mounted) {
+        setState(() {
+          fullOmdbData = omdbData;
+          isFavorite = favoriteStatus;
+        });
+      }
+    }
   }
 
-  // 获取演员表
-  final result = await tmdbService.getCast(movieId);
+  Future<void> _loadCast(int tmdbId) async {
+    try {
+      final result = await tmdbService.getCast(tmdbId);
+      if (mounted) setState(() { cast = result; isLoadingCast = false; });
+    } catch (e) {
+      if (mounted) setState(() => isLoadingCast = false);
+    }
+  }
 
-  setState(() {
-    cast = result;
-    isLoadingCast = false;
-  });
-}
-
-void _showRatingDialog() {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Your Rating"),
-        content: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(5, (index) {
-            final ratingValue = index + 1;
-            return IconButton(
-              icon: Icon(
-                Icons.star,
-                color: userRating != null && userRating! >= ratingValue
-                    ? Colors.amber
-                    : Colors.grey,
-              ),
-              onPressed: () {
-                setState(() {
-                  userRating = ratingValue;
-                });
-                Navigator.pop(context);
-              },
-            );
-          }),
-        ),
+  Future<void> _toggleFavorite() async {
+    if (realImdbId == null) return;
+    if (isFavorite) {
+      await FavoriteDao.deleteFavorite(realImdbId!);
+    } else {
+      await FavoriteDao.insertFavorite(
+        imdbId: realImdbId!,
+        title: widget.movie['Title'] ?? "Unknown",
+        poster: widget.movie['Poster'] ?? "",
       );
-    },
-  );
-}
+    }
+    setState(() => isFavorite = !isFavorite);
+  }
+
+  // 4. 用户评分弹窗逻辑
+  void _showRatingDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Rate this Movie"),
+        content: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(5, (index) => IconButton(
+            icon: Icon(Icons.star, color: (userRating ?? 0) > index ? Colors.amber : Colors.grey),
+            onPressed: () {
+              setState(() => userRating = index + 1);
+              Navigator.pop(context);
+            },
+          )),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final movie = widget.movie;
-    final director=movie["Director"] ?? "Unknown Director";
-    String imdb = movie["imdbRating"] ?? "no rating";
-    String? rotten;
-    String? meta;
+    // 5. 解析 OMDb 数据中的多平台评分
+    String imdb = "No Info";
+    String rotten = "No Info";
+    String meta = "No Info";
 
-    final ratings = movie["Ratings"] as List<dynamic>? ?? [];
-    for (var r in ratings) {
-      if (r["Source"] == "Rotten Tomatoes") rotten = r["Value"];
-      if (r["Source"] == "Metacritic") meta = r["Value"];
+    final ratings = fullOmdbData?['Ratings'] as List?;
+    if (ratings != null) {
+      for (var r in ratings) {
+        if (r['Source'] == 'Internet Movie Database') imdb = r['Value'];
+        if (r['Source'] == 'Rotten Tomatoes') rotten = r['Value'];
+        if (r['Source'] == 'Metacritic') meta = r['Value'];
+      }
+    } else {
+      imdb = widget.movie['imdbRating'] ?? "No Info";
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(movie["Title"] ?? "Movie Detail"),       
-      ),
+      backgroundColor: Colors.black,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-                Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (movie["Poster"] != null && movie["Poster"] != "N/A")
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              movie["Poster"],
-              width: 120,
-              height: 180,
-              fit: BoxFit.cover,
-            ),
-          ),
-
-        const SizedBox(width: 16),
-
-        Expanded(
-          child: 
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                movie["Title"] ?? "",
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            "${movie["Year"] ?? ""} - $director",
-            style: const TextStyle(
-              fontSize: 14,
-              color: Colors.deepPurple,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-            Row(
+            Stack(
               children: [
-                // List button
-                // onTap to save or remove from favorite list
-                _IconButton(
-                  icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-                  iconColor: const Color.fromARGB(255, 195, 32, 21),
-                  label: "Saves",
-                  onTap: () async {
-                    final imdbId = movie["imdbID"]; 
-                    if (imdbId == null) {
-                      print("Error: imdbID is null");
-                      return;
-                    }
-
-                    try {
-                      if (!isFavorite) {
-                        // save to database
-                        await FavoriteDao.insertFavorite(
-                          imdbId: imdbId,
-                          title: movie["Title"] ?? "Unknown",
-                          poster: movie["Poster"] ?? "",
-                          rating: userRating, 
-                        );
-                      } else {
-                        //  remove from database
-                        await FavoriteDao.deleteFavorite(imdbId);
-                      }
-
-                      // update UI
-                      setState(() {
-                        isFavorite = !isFavorite;
-                      });
-
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(isFavorite ? "Added to Saves List ❤️" : "Removed from List 💔"),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      //debug info
-                      print("Database Error: $e"); 
-                    }
-                  },
+                Image.network(
+                  widget.movie["Poster"] ?? "",
+                  width: double.infinity, height: 450, fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      Container(height: 450, color: Colors.grey[900], child: const Icon(Icons.broken_image, size: 80, color: Colors.white)),
                 ),
-
-                const SizedBox(width: 12),
-
-                // Rating button
-                  _IconButton(
-                    icon: Icons.star_border,
-                    iconColor: Colors.amber,
-                    onTap: _showRatingDialog,
-                    label: "Rate",
-                  ),
-                
+                Positioned(top: 50, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
               ],
             ),
-
-
-                const SizedBox(height: 12),
-
-                if (userRating != null)
-                  Text(
-                    "Your Rating: ${"★" * userRating!}${"☆" * (5 - userRating!)}",
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color.fromARGB(255, 252, 189, 1),
-                    ),
-                  ),
-              ],
-                  ),
-                  
-                ),
-              ],
-),
-
-
-            const SizedBox(height: 12),
-            const Text(
-              "Summary",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            Text(movie["Plot"] ?? "No info available",
-                style: const TextStyle(fontSize: 16)),
-
-            const SizedBox(height: 20),
-            
-            const SizedBox(height: 24),
-
-            if (isLoadingCast)
-              const Center(child: CircularProgressIndicator())
-            else
-              CastStrip(cast: cast),
-
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: 20),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color:  const Color.fromARGB(255, 227, 219, 240), // Item color background
-                borderRadius: BorderRadius.circular(12),
-              ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "Ratings",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Text("${widget.movie['Title']} (${widget.movie['Year']})", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _IconButton(
+                        icon: isFavorite ? Icons.favorite : Icons.favorite_border,
+                        iconColor: Colors.red,
+                        label: isFavorite ? "Saved" : "My List",
+                        onTap: _toggleFavorite,
+                      ),
+                      // 6. 星星按钮：变为用户评分
+                      _IconButton(
+                        icon: Icons.star,
+                        iconColor: userRating != null ? Colors.amber : Colors.grey,
+                        label: userRating != null ? "My: $userRating" : "Rate",
+                        onTap: _showRatingDialog,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(height: 8),
+                  Text(fullOmdbData?['Plot'] ?? widget.movie['Plot'] ?? "No summary available.", style: const TextStyle(color: Colors.grey, fontSize: 16)),
+                  const SizedBox(height: 20),
+                  const Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const SizedBox(height: 10),
+                  isLoadingCast ? const Center(child: CircularProgressIndicator()) : CastStrip(cast: cast),
+                  
+                  // 7. 评分区域：横向占满的 Bar 样式
+                  const SizedBox(height: 30),
+                  Container(
+                    width: double.infinity, // 关键：横向占满
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Ratings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                        const SizedBox(height: 12),
+                        _buildRatingLine("IMDb", imdb),
+                        _buildRatingLine("Rotten Tomatoes", rotten),
+                        _buildRatingLine("Metascore", meta),
+                      ],
                     ),
                   ),
-                  
-
-                  const SizedBox(height: 8),
-
-                  Text("IMDb: $imdb"),
-                  Text("Rotten Tomatoes: ${rotten ?? "No Info"}"),
-                  Text("Metascore: ${meta ?? "No Info"}"),
-
+                  const SizedBox(height: 50),
                 ],
               ),
             ),
-
-
           ],
         ),
       ),
     );
   }
-}
-//define the icon button widget
-Widget _IconButton({
-  required IconData icon,
-  required Color iconColor,
-  required String label,
-  required VoidCallback onTap,
-}) {
-  return InkWell(
-    borderRadius: BorderRadius.circular(8),
-    onTap: onTap,
-    child: Container(
-      width: 80,
-      height: 60,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
+
+  // 辅助评分行组件
+  Widget _buildRatingLine(String platform, String score) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(platform, style: const TextStyle(color: Colors.white70)),
+          Text(score, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
         ],
       ),
+    );
+  }
+}
+
+// 保持原有的 _IconButton 布局样式不变
+Widget _IconButton({required IconData icon, required Color iconColor, required String label, required VoidCallback onTap}) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      width: 100, height: 50,
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: iconColor, size: 22),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12),
-          ),
+          const SizedBox(width: 4),
+          Text(label, style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     ),
   );
 }
-

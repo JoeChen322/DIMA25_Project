@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/omdb_api.dart';
+import '../services/tmdb_api.dart'; // 统一使用 TMDb
 import 'movie_detail.dart';
-import '../utils/relevance.dart';
 import 'dart:ui'; // 用于毛玻璃效果
 
 class SearchPage extends StatefulWidget {
@@ -13,35 +12,45 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _controller = TextEditingController();
-  List<Map<String, dynamic>> movies = [];
-  bool loading = false;
-  String? errorMessage;
+  
+  // 统一变量名，使用队友定义的 _movies 逻辑，但保留你的 loading 状态名
+  List<dynamic> _movies = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  // 使用统一的 TMDb Service
+  final TmdbService _tmdbService = TmdbService(
+      'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
 
   Future<void> _search() async {
     final query = _controller.text.trim();
     if (query.isEmpty) return;
 
     setState(() {
-      loading = true;
-      errorMessage = null;
-      movies = [];
+      _isLoading = true;
+      _errorMessage = null;
+      _movies = [];
     });
 
-    final result = await OmdbApi.searchMovies(query);
-    result.sort((a, b) {
-      final scoreB = relevanceScore(b['Title'] ?? '', query);
-      final scoreA = relevanceScore(a['Title'] ?? '', query);
-      return scoreB.compareTo(scoreA);
-    });
-
-    setState(() {
-      loading = false;
-      if (result.isEmpty) {
-        errorMessage = 'No results found for "$query"';
-      } else {
-        movies = result;
-      }
-    });
+    try {
+      // 调用 TMDb 的搜索接口
+      final result = await _tmdbService.searchMovies(query);
+      
+      setState(() {
+        _isLoading = false;
+        if (result.isEmpty) {
+          _errorMessage = 'No movies found for "$query"';
+        } else {
+          _movies = result;
+          // TMDb 的结果已经按流行度排序，通常不需要手动再次排序
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = "Search failed. Please check your connection.";
+      });
+    }
   }
 
   @override
@@ -53,10 +62,10 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F), // 采用电影感极佳的暗色背景
+      backgroundColor: const Color(0xFF0F0F0F), // 采用深色背景
       body: Stack(
         children: [
-          // 背景装饰：顶部的紫色光晕渐变
+          // 背景装饰：紫光晕
           Positioned(
             top: -100,
             right: -50,
@@ -78,7 +87,7 @@ class _SearchPageState extends State<SearchPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. 标题栏
+                // 1. 标题
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                   child: Column(
@@ -101,7 +110,7 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
 
-                // 2. 悬浮质感的搜索框
+                // 2. 搜索框
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   child: Container(
@@ -129,20 +138,16 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
 
-                // 3. 初始状态下的引导元素 (只有在没加载、没结果时显示)
-                if (!loading && movies.isEmpty && errorMessage == null)
+                // 3. 引导元素 (仅在初始状态显示)
+                if (!_isLoading && _movies.isEmpty && _errorMessage == null)
                   Expanded(
                     child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 10),
-                          const Text(
-                            "Trending Searches",
-                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
+                          const Text("Trending Searches", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 15),
                           Wrap(
                             spacing: 10,
@@ -156,10 +161,7 @@ class _SearchPageState extends State<SearchPage> {
                             ],
                           ),
                           const SizedBox(height: 40),
-                          const Text(
-                            "Browse Categories",
-                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
+                          const Text("Browse Categories", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 15),
                           GridView.count(
                             shrinkWrap: true,
@@ -180,23 +182,22 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                   ),
 
-                // 4. 加载状态
-                if (loading)
+                // 4. 加载中
+                if (_isLoading)
                   const Expanded(child: Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))),
 
-                // 5. 错误提示
-                if (errorMessage != null)
-                  Expanded(child: Center(child: Text(errorMessage!, style: const TextStyle(color: Colors.grey, fontSize: 16)))),
+                // 5. 错误显示
+                if (_errorMessage != null)
+                  Expanded(child: Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 16)))),
 
-                // 6. 搜索结果列表
-                if (movies.isNotEmpty)
+                // 6. 搜索结果 (使用 TMDb 格式)
+                if (_movies.isNotEmpty)
                   Expanded(
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: movies.length,
+                      itemCount: _movies.length,
                       itemBuilder: (context, index) {
-                        final movie = movies[index];
-                        return _buildMovieCard(movie);
+                        return _buildMovieCard(_movies[index]);
                       },
                     ),
                   ),
@@ -208,16 +209,30 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // 电影卡片 UI
-  Widget _buildMovieCard(Map<String, dynamic> movie) {
+  // 电影卡片 UI (适配 TMDb 数据格式)
+  Widget _buildMovieCard(dynamic movie) {
+    final String title = movie["title"] ?? "Untitled";
+    final String year = movie["release_date"]?.split('-')[0] ?? "N/A";
+    final String? posterPath = movie["poster_path"];
+
     return GestureDetector(
-      onTap: () async {
-        final imdbId = movie["imdbID"];
-        if (imdbId == null) return;
-        final fullMovie = await OmdbApi.getMovieById(imdbId);
-        if (fullMovie != null && context.mounted) {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => MovieDetailPage(movie: fullMovie)));
-        }
+      onTap: () {
+        // 转换数据格式以兼容 MovieDetailPage
+        final formattedMovie = {
+          "Title": title,
+          "Year": year,
+          "Poster": posterPath != null ? "https://image.tmdb.org/t/p/w500$posterPath" : null,
+          "Plot": movie["overview"] ?? "No summary available.",
+          "imdbID": movie["id"].toString(),
+          "imdbRating": movie["vote_average"]?.toString(),
+        };
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MovieDetailPage(movie: formattedMovie),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -230,8 +245,13 @@ class _SearchPageState extends State<SearchPage> {
           children: [
             ClipRRect(
               borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
-              child: movie["Poster"] != null && movie["Poster"] != "N/A"
-                  ? Image.network(movie["Poster"], width: 85, height: 120, fit: BoxFit.cover)
+              child: posterPath != null
+                  ? Image.network(
+                      "https://image.tmdb.org/t/p/w185$posterPath",
+                      width: 85,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    )
                   : Container(width: 85, color: Colors.grey[800], child: const Icon(Icons.movie, color: Colors.white)),
             ),
             Expanded(
@@ -242,16 +262,13 @@ class _SearchPageState extends State<SearchPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      movie["Title"] ?? "",
+                      title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      movie["Year"] ?? "",
-                      style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                    ),
+                    Text(year, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
                   ],
                 ),
               ),
@@ -264,7 +281,6 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // 胶囊标签
   Widget _buildModernTag(String text) {
     return GestureDetector(
       onTap: () {
@@ -278,15 +294,11 @@ class _SearchPageState extends State<SearchPage> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
-        child: Text(
-          text,
-          style: const TextStyle(color: Colors.white70, fontSize: 13),
-        ),
+        child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 13)),
       ),
     );
   }
 
-  // 分类卡片
   Widget _buildCategoryCard(String title, Color color) {
     return Container(
       decoration: BoxDecoration(
@@ -299,10 +311,7 @@ class _SearchPageState extends State<SearchPage> {
         border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Center(
-        child: Text(
-          title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-        ),
+        child: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
       ),
     );
   }

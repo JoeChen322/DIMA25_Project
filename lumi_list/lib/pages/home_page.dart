@@ -188,7 +188,7 @@ class _HomeContentState extends State<HomeContent> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _trendingMovies.length,
+              itemCount:_trendingMovies.length > 5 ? 5 : _trendingMovies.length,
               itemBuilder: (context, index) {
                 final movie = _trendingMovies[index];
                 // 3. 点击列表小海报进入详情
