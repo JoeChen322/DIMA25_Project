@@ -1,7 +1,8 @@
+/*for serch movies using TMDb API*/
 import 'package:flutter/material.dart';
-import '../services/tmdb_api.dart'; // 统一使用 TMDb
+import '../services/tmdb_api.dart'; 
 import 'movie_detail.dart';
-import 'dart:ui'; // 用于毛玻璃效果
+import 'dart:ui'; 
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -13,12 +14,12 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _controller = TextEditingController();
   
-  // 统一变量名，使用队友定义的 _movies 逻辑，但保留你的 loading 状态名
+  
   List<dynamic> _movies = [];
   bool _isLoading = false;
   String? _errorMessage;
 
-  // 使用统一的 TMDb Service
+  // all use TMDb Service
   final TmdbService _tmdbService = TmdbService(
       'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
 
@@ -33,16 +34,20 @@ class _SearchPageState extends State<SearchPage> {
     });
 
     try {
-      // 调用 TMDb 的搜索接口
-      final result = await _tmdbService.searchMovies(query);
       
+      final result = await _tmdbService.searchMovies(query);
+      // filter  movies without poster
+      final filteredResult = result.where((movie) {
+          return movie['poster_path'] != null && movie['poster_path'].toString().isNotEmpty;
+         }).toList();
+
       setState(() {
         _isLoading = false;
-        if (result.isEmpty) {
+        if (filteredResult.isEmpty) {
           _errorMessage = 'No movies found for "$query"';
         } else {
-          _movies = result;
-          // TMDb 的结果已经按流行度排序，通常不需要手动再次排序
+          _movies = filteredResult;
+          
         }
       });
     } catch (e) {
@@ -62,10 +67,10 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F), // 采用深色背景
+      backgroundColor: const Color(0xFF0F0F0F), // dark background
       body: Stack(
         children: [
-          // 背景装饰：紫光晕
+          // purple blurred circle background
           Positioned(
             top: -100,
             right: -50,
@@ -87,7 +92,7 @@ class _SearchPageState extends State<SearchPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. 标题
+                //tilte
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                   child: Column(
@@ -110,7 +115,7 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
 
-                // 2. 搜索框
+                // search bar
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   child: Container(
@@ -138,7 +143,7 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
 
-                // 3. 引导元素 (仅在初始状态显示)
+                // default view when no search has been made
                 if (!_isLoading && _movies.isEmpty && _errorMessage == null)
                   Expanded(
                     child: SingleChildScrollView(
@@ -172,9 +177,11 @@ class _SearchPageState extends State<SearchPage> {
                             crossAxisSpacing: 12,
                             children: [
                               _buildCategoryCard("Action", Colors.orangeAccent),
-                              _buildCategoryCard("Sci-Fi", Colors.blueAccent),
+                              _buildCategoryCard("Fiction", Colors.blueAccent),
                               _buildCategoryCard("Horror", Colors.redAccent),
                               _buildCategoryCard("Comedy", Colors.greenAccent),
+                              _buildCategoryCard("Crime",  Colors.yellowAccent),
+                              _buildCategoryCard("Romance", Colors.purpleAccent),
                             ],
                           ),
                         ],
@@ -182,15 +189,15 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                   ),
 
-                // 4. 加载中
+                // loading indicator
                 if (_isLoading)
                   const Expanded(child: Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))),
 
-                // 5. 错误显示
+                //error message
                 if (_errorMessage != null)
                   Expanded(child: Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 16)))),
 
-                // 6. 搜索结果 (使用 TMDb 格式)
+                // show search results
                 if (_movies.isNotEmpty)
                   Expanded(
                     child: ListView.builder(
@@ -209,7 +216,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  // 电影卡片 UI (适配 TMDb 数据格式)
+  // mobvie card widget
   Widget _buildMovieCard(dynamic movie) {
     final String title = movie["title"] ?? "Untitled";
     final String year = movie["release_date"]?.split('-')[0] ?? "N/A";
@@ -217,7 +224,7 @@ class _SearchPageState extends State<SearchPage> {
 
     return GestureDetector(
       onTap: () {
-        // 转换数据格式以兼容 MovieDetailPage
+        // change movie data format to match MovieDetailPage requirements
         final formattedMovie = {
           "Title": title,
           "Year": year,
