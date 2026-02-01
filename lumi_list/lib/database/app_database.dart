@@ -62,20 +62,7 @@ class AppDatabase {
             )
           ''');
       },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        
-        if (oldVersion < 4) {
-          // Upgrade to version 3: Create personal_rate table
-          await db.execute('''
-            CREATE TABLE personal_ratings (
-              imdb_id TEXT PRIMARY KEY,
-              title TEXT,
-              rating INTEGER,
-              timestamp INTEGER
-            )
-          ''');
-        }
-      },
+      
     );
   }
 }

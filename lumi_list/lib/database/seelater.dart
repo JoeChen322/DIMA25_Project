@@ -2,7 +2,6 @@ import 'package:sqflite/sqflite.dart';
 import 'app_database.dart';
 
 class SeeLaterDao {
-  // 插入稍后观看
   static Future<void> insertSeeLater({
     required String imdbId,
     required String title,
@@ -20,7 +19,7 @@ class SeeLaterDao {
     );
   }
 
-  // 删除
+  //delete
   static Future<void> deleteSeeLater(String imdbId) async {
     final db = await AppDatabase.database;
     await db.delete(
@@ -30,7 +29,7 @@ class SeeLaterDao {
     );
   }
 
-  // 检查状态
+  // check if in see later
   static Future<bool> isSeeLater(String imdbId) async {
     final db = await AppDatabase.database;
     final res = await db.query(
