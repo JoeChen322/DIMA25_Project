@@ -1,3 +1,6 @@
+/*Basic setting of sqlite database
+Info of the users including account Email, password*/
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -16,7 +19,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE favorites (
@@ -39,6 +42,25 @@ class AppDatabase {
             avatar TEXT         
           )
         ''');
+        // Favorite movies table
+        await db.execute('''
+          CREATE TABLE favorite (
+            imdb_id TEXT PRIMARY KEY,
+            title TEXT,
+            rating INTEGER,
+            poster STRING
+          )
+        ''');
+        // Personal ratings table
+        await db.execute('''
+          CREATE TABLE personal_rate (
+            imdb_id TEXT PRIMARY KEY,
+            title TEXT,
+            rating INTEGER,
+            timestamp INTEGER
+          )
+        ''');
+        
       },
     );
   }

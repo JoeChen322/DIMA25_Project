@@ -1,3 +1,4 @@
+/*Info of the favorites list associated with the ♥ button */
 import 'package:sqflite/sqflite.dart';
 import 'app_database.dart';
 

@@ -4,7 +4,7 @@ import '../models/cast.dart';
 import '../services/tmdb_api.dart';
 import '../services/omdb_api.dart'; 
 import '../database/favorite.dart';
-
+import '../database/personal_rate.dart';
 class MovieDetailPage extends StatefulWidget {
   final Map<String, dynamic> movie;
 
@@ -16,7 +16,7 @@ class MovieDetailPage extends StatefulWidget {
 
 class _MovieDetailPageState extends State<MovieDetailPage> {
   bool isFavorite = false;
-  int? userRating; // 1. 定义用户评分变量
+  int? userRating; 
   
   final TmdbService tmdbService = TmdbService(
       'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
@@ -24,7 +24,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   List<CastMember> cast = [];
   bool isLoadingCast = true;
   String? realImdbId; 
-  Map<String, dynamic>? fullOmdbData; // 用于存储多平台评分数据
+  Map<String, dynamic>? fullOmdbData; 
 
   @override
   void initState() {
@@ -36,7 +36,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     String? id = widget.movie['imdbID']; 
     int? tmdbId;
 
-    // 2. ID 转换逻辑
+    // change all ids to both TMDb and IMDB into IMDB ID
     if (id != null && !id.startsWith('tt')) {
       tmdbId = int.parse(id);
       realImdbId = await tmdbService.getImdbIdByTmdbId(tmdbId);
@@ -45,16 +45,18 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       tmdbId = await tmdbService.getMovieIdByImdb(id);
     }
 
-    // 3. 并行加载：演员 (TMDb) + 完整详情 (OMDb)
+    // load cast and OMDb data
     if (tmdbId != null) _loadCast(tmdbId);
 
     if (realImdbId != null) {
       final omdbData = await OmdbApi.getMovieById(realImdbId!);
       final favoriteStatus = await FavoriteDao.isFavorite(realImdbId!);
+      final savedRating = await PersonalRateDao.getRating(realImdbId!);
       if (mounted) {
         setState(() {
           fullOmdbData = omdbData;
           isFavorite = favoriteStatus;
+          userRating = savedRating;
         });
       }
     }
@@ -83,29 +85,44 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     setState(() => isFavorite = !isFavorite);
   }
 
-  // 4. 用户评分弹窗逻辑
-  void _showRatingDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Rate this Movie"),
-        content: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(5, (index) => IconButton(
-            icon: Icon(Icons.star, color: (userRating ?? 0) > index ? Colors.amber : Colors.grey),
-            onPressed: () {
-              setState(() => userRating = index + 1);
-              Navigator.pop(context);
-            },
-          )),
-        ),
+  // show rating dialog
+void _showRatingDialog() {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Rate this Movie"),
+      content: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(5, (index) => IconButton(
+          icon: Icon(
+            Icons.star, 
+            color: (userRating ?? 0) > index ? Colors.amber : Colors.grey
+          ),
+          onPressed: () async {
+            int newScore = index + 1;
+            //store the new rating in the database
+            if (realImdbId != null) {
+              await PersonalRateDao.insertOrUpdateRate(
+                imdbId: realImdbId!,
+                title: widget.movie['Title'] ?? "Unknown",
+                rating: newScore,
+              );
+            }
+
+            if (mounted) {
+              setState(() => userRating = newScore); 
+            }
+            Navigator.pop(context);
+          },
+        )),
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
-    // 5. 解析 OMDb 数据中的多平台评分
+    // load ratings from several platforms
     String imdb = "No Info";
     String rotten = "No Info";
     String meta = "No Info";
@@ -154,7 +171,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                         label: isFavorite ? "Saved" : "My List",
                         onTap: _toggleFavorite,
                       ),
-                      // 6. 星星按钮：变为用户评分
+                      // star rating buttons
                       _IconButton(
                         icon: Icons.star,
                         iconColor: userRating != null ? Colors.amber : Colors.grey,
@@ -172,10 +189,10 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                   const SizedBox(height: 10),
                   isLoadingCast ? const Center(child: CircularProgressIndicator()) : CastStrip(cast: cast),
                   
-                  // 7. 评分区域：横向占满的 Bar 样式
+                  // Ratings from 
                   const SizedBox(height: 30),
                   Container(
-                    width: double.infinity, // 关键：横向占满
+                    width: double.infinity, 
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.08),
@@ -202,7 +219,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     );
   }
 
-  // 辅助评分行组件
+  
   Widget _buildRatingLine(String platform, String score) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -217,7 +234,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   }
 }
 
-// 保持原有的 _IconButton 布局样式不变
+//  _IconButton form
 Widget _IconButton({required IconData icon, required Color iconColor, required String label, required VoidCallback onTap}) {
   return InkWell(
     onTap: onTap,
