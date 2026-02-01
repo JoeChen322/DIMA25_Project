@@ -1,3 +1,6 @@
+/*in ME/IMDB CLASSICS PAGE, change to use 
+getTopRatedMovies from TMDB service to fetch top rated movies*/
+
 import 'package:flutter/material.dart';
 import '../services/tmdb_api.dart'; // TMDB 
 import 'movie_detail.dart';
@@ -90,7 +93,6 @@ class _ClassicsPageState extends State<ClassicsPage> {
         ),
         child: Row(
           children: [
-            // 排名数字
             SizedBox(
               width: 40,
               child: Text(
@@ -99,7 +101,6 @@ class _ClassicsPageState extends State<ClassicsPage> {
               ),
             ),
             const SizedBox(width: 5),
-            // 海报
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
@@ -116,7 +117,6 @@ class _ClassicsPageState extends State<ClassicsPage> {
               ),
             ),
             const SizedBox(width: 15),
-            // 文字信息
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

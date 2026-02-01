@@ -152,20 +152,7 @@ class _SearchPageState extends State<SearchPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 10),
-                          const Text("Trending Searches", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 15),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 12,
-                            children: [
-                              _buildModernTag("Inception"),
-                              _buildModernTag("Interstellar"),
-                              _buildModernTag("The Whale"),
-                              _buildModernTag("Batman"),
-                              _buildModernTag("Marvel"),
-                            ],
-                          ),
+                          
                           const SizedBox(height: 40),
                           const Text("Browse Categories", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 15),

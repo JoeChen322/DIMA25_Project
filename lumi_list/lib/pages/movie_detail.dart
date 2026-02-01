@@ -23,7 +23,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   int? userRating; 
   bool _isExpanded=false;
   bool isSeeLater = false;
-
+  
   final TmdbService tmdbService = TmdbService(
       'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
 
@@ -31,7 +31,9 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   bool isLoadingCast = true;
   String? realImdbId; 
   Map<String, dynamic>? fullOmdbData; 
-
+  String _plot="Loading Summary...";
+  String _year = "NA";
+  String _director = "No Info";
   @override
   void initState() {
     super.initState();
@@ -47,7 +49,9 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     {
       tmdbId = int.parse(id);
       realImdbId = await tmdbService.getImdbIdByTmdbId(tmdbId);
+      _loadOmdbDetails(realImdbId!);
     } else if (id != null && id.startsWith('tt')) {
+      _loadOmdbDetails(id);
       realImdbId = id;
       tmdbId = await tmdbService.getMovieIdByImdb(id);
     }
@@ -57,17 +61,38 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
     if (realImdbId != null) {
       final omdbData = await OmdbApi.getMovieById(realImdbId!);
-      final favoriteStatus = await FavoriteDao.isFavorite(realImdbId!);
+      final favoriteStatus = await FavoriteDao.isFavorite(realImdbId!);   
+      final laterStatus = await SeeLaterDao.isSeeLater(realImdbId!);
       final savedRating = await PersonalRateDao.getRating(realImdbId!);
       if (mounted) {
         setState(() {
           fullOmdbData = omdbData;
           isFavorite = favoriteStatus;
+          isSeeLater = laterStatus;
           userRating = savedRating;
         });
       }
     }
   }
+
+Future<void> _loadOmdbDetails(String id) async {
+  try {
+    final details = await OmdbApi.getMovieById(id); 
+    
+    if (mounted && details != null) {
+      setState(() {
+        _director = details['Director'] ?? "No Info";
+        _plot = details['Plot'] ?? "No summary available.";
+        _year = details['Year'] ?? "";
+      });
+    }
+  } catch (e) {
+    setState(() {
+      _plot = "Failed to load summary.";
+    });
+  }
+}
+
   Future<void> _checkSeeLaterStatus() async {
   if (realImdbId != null) {
     final status = await SeeLaterDao.isSeeLater(realImdbId!);
@@ -88,7 +113,8 @@ Future<void> _toggleSeeLater() async {
     );
   }
   setState(() => isSeeLater = !isSeeLater);
-}
+ }
+
   Future<void> _loadCast(int tmdbId) async {
     try {
       final result = await tmdbService.getCast(tmdbId);
@@ -97,7 +123,7 @@ Future<void> _toggleSeeLater() async {
       if (mounted) setState(() => isLoadingCast = false);
     }
   }
-
+ // favorite state
   Future<void> _toggleFavorite() async {
     if (realImdbId == null) return;
     if (isFavorite) {
@@ -107,6 +133,7 @@ Future<void> _toggleSeeLater() async {
         imdbId: realImdbId!,
         title: widget.movie['Title'] ?? "Unknown",
         poster: widget.movie['Poster'] ?? "",
+        
       );
     }
     setState(() => isFavorite = !isFavorite);
@@ -174,12 +201,12 @@ void _showRatingDialog() {
             Stack(
               children: [
                 Image.network(
-                  widget.movie["Poster"] ?? "",
-                  width: double.infinity, height: 450, fit: BoxFit.cover,
+                  widget.movie['Poster'] ?? "",
+                  width: double.infinity, height: 530, fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
-                      Container(height: 450, color: Colors.grey[900], child: const Icon(Icons.broken_image, size: 80, color: Colors.white)),
+                      Container(height: 530, color: Colors.grey[900], child: const Icon(Icons.broken_image, size: 80, color: Colors.white)),
                 ),
-                Positioned(top: 50, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
+                Positioned(top: 80, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
               ],
             ),
             Padding(
@@ -187,7 +214,9 @@ void _showRatingDialog() {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("${widget.movie['Title']} (${widget.movie['Year']})", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text("${widget.movie['Title']} ($_year)", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text("——$_director", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                  
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -209,7 +238,7 @@ void _showRatingDialog() {
                       _IconButton(
                         icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined,
                         iconColor: Colors.blueAccent,
-                        label: isSeeLater ? "In Later" : "Watch Later",
+                        label: isSeeLater ? "In Later" : "Later",
                         onTap: _toggleSeeLater,
                       ),
                     ],
@@ -220,7 +249,7 @@ void _showRatingDialog() {
                   // summary section with expandable text
                   const Text( "Summary",style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),),
                   const SizedBox(height: 8),
-
+                  
                   InkWell(
                     onTap: () {
                       setState(() {
@@ -231,7 +260,7 @@ void _showRatingDialog() {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.movie['Plot'] ?? "No summary available.",
+                          _plot ?? "No summary available.",
                           maxLines: _isExpanded ? null : 4,
                           overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
                           style: const TextStyle(color: Colors.grey, fontSize: 16),

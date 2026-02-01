@@ -30,10 +30,8 @@ class CategoryDetailPage extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (_) => MovieDetailPage(movie: {    
                     "imdbID": movie['id'], 
-                    "Year": movie['year'],
                     "Title": movie['title'],
                     "Poster": movie['poster'],
-                    "Plot": movie['summary'],
                   }),
                 ),
               );
@@ -72,7 +70,7 @@ class CategoryDetailPage extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 5),
-                          const Text("IMDb Top 10", style: TextStyle(color: Colors.amber, fontSize: 12)),
+                          Text("${movie['year'] ?? 'Unknown Year'} - ${movie['director'] ?? 'NA'}", style: const TextStyle(color: Colors.amber, fontSize: 12)),
                         ],
                       ),
                     ),

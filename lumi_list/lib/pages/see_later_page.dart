@@ -1,4 +1,5 @@
-// lib/pages/see_later_page.dart
+/* In ME/Watch Later Page 
+to display the list of movies marked to watch later */
 
 import 'package:flutter/material.dart';
 import 'package:lumi_list/database/app_database.dart';
@@ -7,7 +8,7 @@ import 'movie_detail.dart';
 class SeeLaterPage extends StatelessWidget {
   const SeeLaterPage({super.key});
 
-  // 从数据库获取列表的方法
+  
   Future<List<Map<String, dynamic>>> _getSeeLaterMovies() async {
     final db = await AppDatabase.database;
     return await db.query('see_later');
@@ -16,7 +17,7 @@ class SeeLaterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // 保持深色主题
+      backgroundColor: Colors.black, 
       appBar: AppBar(
         title: const Text("Watch Later", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
@@ -66,14 +67,16 @@ class SeeLaterPage extends StatelessWidget {
                   ),
                   trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 16),
                   onTap: () {
-                    // 跳转回详情页，注意需要构造 movie 对象
+                    
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => MovieDetailPage(movie: {
+                        builder: (context) => MovieDetailPage(movie: 
+                        {
                           'imdbID': movie['imdb_id'],
                           'Title': movie['title'],
                           'Poster': movie['poster'],
+                          'Year':movie['year']
                         }),
                       ),
                     );

@@ -19,7 +19,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: (db, version) async {
         
 
@@ -62,42 +62,14 @@ class AppDatabase {
             )
           ''');
       },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        
-        if (oldVersion < 4) {
-          // Upgrade to version 3: Create personal_rate table
-          await db.execute('''
-            CREATE TABLE personal_ratings (
-              imdb_id TEXT PRIMARY KEY,
-              title TEXT,
-              rating INTEGER,
-              timestamp INTEGER
-            )
-          ''');
-        }
-
-        if (oldVersion < 4) {
-          // Upgrade to version 4: Create see_later table
-          await db.execute('''
-            CREATE TABLE see_later (
-              imdb_id TEXT PRIMARY KEY,
-              title TEXT,
-              poster TEXT
-            )
-          ''');
-        }
-        if (oldVersion < 4) {
-          // Future upgrades can be handled here
-          await db.execute('''
-            CREATE TABLE favorite (
-              imdb_id TEXT PRIMARY KEY,
-              title TEXT,
-              rating INTEGER,
-              poster TEXT
-            )
-          ''');
-        }
-      },
+    onUpgrade: (db, oldVersion, newVersion) async {
+    if (oldVersion < 5) {
+    // 使用 IF NOT EXISTS 确保不会因为表已存在而报错
+    await db.execute('CREATE TABLE IF NOT EXISTS personal_ratings (imdb_id TEXT PRIMARY KEY, title TEXT, rating INTEGER, timestamp INTEGER)');
+    await db.execute('CREATE TABLE IF NOT EXISTS see_later (imdb_id TEXT PRIMARY KEY, title TEXT, poster TEXT)');
+    await db.execute('CREATE TABLE IF NOT EXISTS favorite (imdb_id TEXT PRIMARY KEY, title TEXT, rating INTEGER, poster TEXT)');
+  }
+},
     );
     
   }
