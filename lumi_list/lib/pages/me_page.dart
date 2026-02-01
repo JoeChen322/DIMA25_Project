@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
-import 'dart:ui'; // 用于毛玻璃效果
+import 'dart:ui'; 
+import 'classics_page.dart';
+import 'favorite_page.dart';
 
 class MyListPage extends StatelessWidget {
-  const MyListPage({super.key});
+  // received email from HomePage
+  final String? email; 
+
+  // add constructor
+  const MyListPage({super.key, this.email});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. 背景换成与 Search 页面一致的深黑色
       backgroundColor: const Color(0xFF0F0F0F), 
       body: Stack(
         children: [
-          // 2. 顶部紫色光晕装饰，呼应 Search 页面
           Positioned(
             top: -50,
             left: -50,
@@ -34,7 +38,6 @@ class MyListPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 3. 页面标题
                   const Padding(
                     padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
                     child: Text(
@@ -60,7 +63,6 @@ class MyListPage extends StatelessWidget {
                     ),
                   ),
                   
-                  // 4. 功能入口网格
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -70,10 +72,54 @@ class MyListPage extends StatelessWidget {
                     crossAxisSpacing: 16,
                     childAspectRatio: 1.3,
                     children: [
-                      _buildDarkItem(context, Colors.amber, "Favorites", Icons.star_rounded),
+                      // 1. Favorites
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const FavoritePage()),
+                          );
+                        },
+                        child: _buildDarkItem(context, Colors.amber, "Favorites", Icons.star_rounded),
+                      ),
+                      
+                      // 2. Watch Later
                       _buildDarkItem(context, Colors.redAccent, "Watch Later", Icons.access_time_filled_rounded),
-                      _buildDarkItem(context, Colors.blueAccent, "Classics", Icons.movie_filter_rounded),
-                      _buildDarkItem(context, Colors.purpleAccent, "Custom List", Icons.add_rounded),
+                      
+                      // 3. IMDb Classics
+                      GestureDetector(
+                        onTap: () {
+                           Navigator.push(
+                             context,
+                             MaterialPageRoute(builder: (context) => const ClassicsPage()),
+                            );
+                       },
+                       child: _buildDarkItem(context, Colors.blueAccent, "IMDb Classics", Icons.movie_filter_rounded),
+                      ),
+
+                      // 4. My Profile
+                      GestureDetector(
+                        onTap: () {
+                          // Navigate to Profile Page with email
+                          Navigator.pushNamed(
+                            context,
+                            '/profile',
+                            arguments: {
+                              'name': 'User Name', 
+                              'bio': 'Write something about yourself...',
+                              'phone': '+39 123 456 7890',
+                              'email': email, 
+                              'avatar': null, 
+                            },
+                          );
+                        },
+                        child: _buildDarkItem(
+                          context, 
+                          const Color(0xFF00E5FF), 
+                          "My Profile", 
+                          Icons.person_rounded 
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -85,11 +131,9 @@ class MyListPage extends StatelessWidget {
     );
   }
 
-  // 5. 适配深色模式的卡片组件
   Widget _buildDarkItem(BuildContext context, Color color, String title, IconData icon) {
     return Container(
       decoration: BoxDecoration(
-        // 使用半透明深灰，营造悬浮感
         color: Colors.white.withOpacity(0.05), 
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withOpacity(0.08)),

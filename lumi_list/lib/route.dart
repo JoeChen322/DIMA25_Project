@@ -7,7 +7,7 @@ import 'pages/signup_page.dart';
 import 'pages/home_page.dart';
 import 'pages/search_page.dart';
 //import 'pages/movie_detail.dart';
-import 'pages/me.dart';
+import 'pages/me_page.dart';
 
 import 'pages/edit_profile_page.dart';
 import 'pages/forgot_password_page.dart';

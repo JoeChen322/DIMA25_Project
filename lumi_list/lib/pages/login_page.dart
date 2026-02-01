@@ -65,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
             'bio': user['bio'] ?? 'Write something about yourself...',
             'phone': user['phone'] ?? '+39 123 456 7890',
             'avatar': user['avatar'], 
-            'email': user['email'],
+            'email': _emailController.text, // Pass email for future use
           }
         );
       } else {

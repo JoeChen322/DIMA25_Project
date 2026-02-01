@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lumi_list/database/app_database.dart';
 
@@ -10,31 +11,53 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String _name = "User Name"; 
-  String _bio = "Write something about yourself..."; 
-  String _phone = "+39 123 456 7890"; 
+  String _name = "Movie Fan"; 
+  String _bio = "LumiList User"; 
+  String _phone = "N/A"; 
   String? _avatarPath;
-
-  // Add email variable to identify the user in DB
   String? _email;
-
-  bool _isInit = false;
+  bool _isLoading = true; 
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_isInit) {
+    if (_email == null) {
       final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null) {
-        setState(() {
-          if (args['name'] != null) _name = args['name'];
-          if (args['bio'] != null) _bio = args['bio'];
-          if (args['phone'] != null) _phone = args['phone'];
-          if (args['avatar'] != null) _avatarPath = args['avatar'];
-          if (args['email'] != null) _email = args['email'];
-        });
+      if (args != null && args['email'] != null) {
+        _email = args['email'];
+        _loadDataFromDb();
+      } else {
+        setState(() => _isLoading = false);
       }
-      _isInit = true;
+    }
+  }
+
+  // data from database
+  Future<void> _loadDataFromDb() async {
+    if (_email == null) return;
+    
+    try {
+      final db = await AppDatabase.database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        'users',
+        where: 'email = ?',
+        whereArgs: [_email],
+      );
+
+      if (maps.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _name = maps.first['username'] ?? "User Name";
+            _bio = maps.first['bio'] ?? "Write something about yourself...";
+            _phone = maps.first['phone'] ?? "N/A";
+            _avatarPath = maps.first['avatar'];
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Error loading profile: $e");
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -47,348 +70,169 @@ class _ProfilePageState extends State<ProfilePage> {
         'bio': _bio,
         'phone': _phone,
         'avatar': _avatarPath,
+        'email': _email,
       }
     );
-    
-    if (result != null && result is Map) {
-      setState(() {
-        _name = result['name'];
-        _bio = result['bio'];
-        _phone = result['phone'];
-        _avatarPath = result['avatar'];
-      });
 
-      _updateUserInDatabase(result['name'], result['bio'], result['phone'], result['avatar']);
+    if (result != null && result is Map<String, dynamic>) {
+      await _updateUserInDatabase(result);
+      await _loadDataFromDb(); 
     }
   }
 
-// Helper function to update SQLite
-  Future<void> _updateUserInDatabase(String newName, String newBio, String newPhone, String? newAvatar) async {
-    if (_email == null) return; // Can't update if we don't know the email
-
-    try {
-      final db = await AppDatabase.database;
-      String cleanEmail = _email!.trim();
-      int count = await db.update(
-        'users', 
-        {
-          'username': newName,
-          'bio': newBio,
-          'phone': newPhone,
-          'avatar': newAvatar, // can be null
-        },
-        where: 'email = ?',
-        whereArgs: [_email],
-      );
-    } catch (e) {
-      print("❌ Error updating database: $e");
-    }
-  }
-
-  void _goBack() {
-    Navigator.pop(context, {
-      'name': _name,
-      'bio': _bio,
-      'phone': _phone,
-      'avatar': _avatarPath,
-    });
+  Future<void> _updateUserInDatabase(Map<String, dynamic> data) async {
+    if (_email == null) return;
+    final db = await AppDatabase.database;
+    await db.update(
+      'users',
+      {
+        'username': data['name'],
+        'bio': data['bio'],
+        'phone': data['phone'],
+        'avatar': data['avatar'],
+      },
+      where: 'email = ?',
+      whereArgs: [_email],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), 
-      appBar: AppBar(
-        backgroundColor: Colors.transparent, 
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: _goBack,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined, color: Colors.white),
-            onPressed: () {
-               Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-            },
+      backgroundColor: const Color(0xFF0F0F0F),
+      body: Stack(
+        children: [
+          Positioned(
+            top: -100,
+            right: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.deepPurple.withOpacity(0.15),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 70, sigmaY: 70),
+                child: Container(color: Colors.transparent),
+              ),
+            ),
+          ),
+          
+          SafeArea(
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      // AppBar 
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const Text(
+                            "Profile",
+                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_note_rounded, color: Colors.deepPurpleAccent, size: 28),
+                            onPressed: _navigateToEdit,
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // Avatar
+                      Center(
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.deepPurpleAccent.withOpacity(0.5), width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundColor: Colors.white.withOpacity(0.05),
+                            backgroundImage: (_avatarPath != null && _avatarPath!.isNotEmpty) 
+                                ? FileImage(File(_avatarPath!)) 
+                                : null,
+                            child: (_avatarPath == null || _avatarPath!.isEmpty)
+                                ? const Icon(Icons.person_rounded, size: 60, color: Colors.white24) 
+                                : null,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Text(_name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text(_bio, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white54, fontSize: 14)),
+
+                      const SizedBox(height: 40),
+
+                      // list tiles
+                      _buildDarkInfoTile("Email", _email ?? "N/A", Icons.email_rounded),
+                      _buildDarkInfoTile("Phone", _phone, Icons.phone_iphone_rounded),
+                      
+                      const SizedBox(height: 50),
+                      
+                      // Logout Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false),
+                          icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
+                          label: const Text("Log Out", style: TextStyle(color: Colors.redAccent, fontSize: 16)),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            backgroundColor: Colors.redAccent.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
           ),
         ],
-      ),
-      extendBodyBehindAppBar: true, 
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-
-            const SizedBox(height: 20),
-
-            // --- Film and Television Archives ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Movie Archives", style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  // 3. 
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white, 
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.deepPurple.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildArchiveItem("Wishlist", "0", ""), 
-                        _buildArchiveItem("Watching", "0", ""), 
-                        _buildArchiveItem("Watched", "0", ""), 
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // My Lists
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("My Lists", style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
-                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey[600]),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 140, 
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _buildListItem(
-                    Colors.amber, 
-                    "Favorites", 
-                    Icons.star,
-                    onTap: () => Navigator.pushNamed(context, '/favorite'),
-                  ),
-                  _buildListItem(Colors.redAccent, "Watch Later", Icons.access_time),
-                  _buildListItem(Colors.blueAccent, "Classics", Icons.movie_filter),
-                  _buildListItem(Colors.purple, "Custom List", Icons.add),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 50),
-          ],
-        ),
       ),
     );
   }
 
-// --- Header component ---
-  Widget _buildHeader() {
+  Widget _buildDarkInfoTile(String label, String value, IconData icon) {
     return Container(
-      // Add a little top padding to fit the notch screen.
-      padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 20, 24, 30),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF673AB7), // DeepPurple
-            Color(0xFF512DA8), // DeepPurple[700]
-          ],
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.deepPurple.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8), 
-          ),
-        ],
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center, 
         children: [
-          // Avatar section
-          GestureDetector(
-            onTap: _navigateToEdit,
-            child: Stack(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2), 
-                    shape: BoxShape.circle,
-                  ),
-                  child: CircleAvatar(
-                    radius: 40, 
-                    backgroundColor: Colors.white,
-                    backgroundImage: _avatarPath != null 
-                        ? FileImage(File(_avatarPath!)) 
-                        : null,
-                    child: _avatarPath == null 
-                        ? const Icon(Icons.person, size: 45, color: Colors.grey) 
-                        : null,
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.amber,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.deepPurple, width: 2), 
-                    ),
-                    child: const Icon(Icons.edit, size: 12, color: Colors.black),
-                  ),
-                ),
-              ],
-            ),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.deepPurpleAccent.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: Colors.deepPurpleAccent, size: 22),
           ),
-          
           const SizedBox(width: 20),
-          
-          // Info section
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24, 
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    "ID: 10001",
-                    style: TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: _navigateToEdit,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _bio.isNotEmpty ? _bio : "No bio yet...",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13),
-                        ),
-                      ),
-                      Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white.withOpacity(0.7)),
-                    ],
-                  ),
-                ),
+                Text(label, style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                const SizedBox(height: 4),
+                Text(value, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // --- Film and Television Archive Component ---
-  Widget _buildArchiveItem(String label, String count, String imageUrl) {
-    return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        child: Row(
-          children: [
-            // If no image is displayed, a gray square with an icon is shown.
-            Container(
-              width: 40, height: 56,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(4),
-                image: imageUrl.isNotEmpty 
-                    ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
-                    : null,
-              ),
-              child: imageUrl.isEmpty 
-                  ? const Center(child: Icon(Icons.movie_creation_outlined, color: Colors.grey, size: 20)) 
-                  : null,
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                Text(count, style: const TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // --- List widget ---
-  Widget _buildListItem(Color color, String title, IconData icon, {VoidCallback? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 110,
-        margin: const EdgeInsets.only(right: 12, bottom: 5), 
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white, 
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-             BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 3)),
-          ]
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1), 
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.black87, fontSize: 13, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
       ),
     );
   }

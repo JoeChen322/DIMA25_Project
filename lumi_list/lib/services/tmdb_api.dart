@@ -122,4 +122,28 @@ Future<List<dynamic>> searchMovies(String query) async {
     return [];
   }
 }
+
+Future<List<dynamic>> getTopRatedMovies() async {
+  try {
+    final res = await Dio().get(
+      '$_baseUrl/movie/top_rated', // 
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ),
+      queryParameters: {
+        'language': 'en-US',
+        'page': 1, // 
+      },
+    );
+    
+    debugPrint('TMDb top rated response: ${res.data['results']?.length}');
+    return res.data['results'] ?? [];
+  } catch (e) {
+    debugPrint('TMDb top rated error: $e');
+    return [];
+  }
+}
 }
