@@ -96,39 +96,35 @@ class MovieCategoryData {
         'year': '1980',
         'director': 'Stanley Kubrick',
         'summary': 'A family heads to an isolated hotel for the winter where a sinister presence influences the father into violence, while his psychic son sees horrific forebodings from both past and future.',
-        'poster': 'https://m.media-amazon.com/images/M/MV5BZWFlYmY2MGEtZjVkYS00YzU4LTg0YjQtYzY1ZGE3NTAyMmIzXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SX300.jpg'
-      },
+        'poster': 'https://m.media-amazon.com/images/M/MV5BNmM5ZThhY2ItOGRjOS00NzZiLWEwYTItNDgyMjFkOTgxMmRiXkEyXkFqcGc@._V1_SX300.jpg'},
       {
         'id': 'tt0078748',
         'title': 'Alien',
         'year': '1979',
         'director': 'Ridley Scott',
         'summary': 'The crew of a commercial spacecraft encounter a deadly lifeform after investigating an unknown transmission.',
-        'poster': 'https://m.media-amazon.com/images/M/MV5BOGQzZTBjMjQtOTVmMS00NGE5LWEyYmMtOGQ1NzgxYmMxMjU1XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg'
-      },
+        'poster': 'https://m.media-amazon.com/images/M/MV5BN2NhMDk2MmEtZDQzOC00MmY5LThhYzAtMDdjZGFjOGZjMjdjXkEyXkFqcGc@._V1_SX300.jpg'},
       {
         'id': 'tt0102926',
         'title': 'The Silence of the Lambs',
         'year': '1991',
         'director': 'Jonathan Demme',
         'summary': 'A young F.B.I. cadet must receive the help of an incarcerated and manipulative cannibal killer to help catch another serial killer, a madman who skins his victims.',
-        'poster': 'https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLWE1ZGAtYzM1M2E2YjYzZjk3XkEyXkFqcGdeQXVyNTIzOTk5ODM@._V1_SX300.jpg'
-      },
+        'poster': 'https://m.media-amazon.com/images/M/MV5BNDdhOGJhYzctYzYwZC00YmI2LWI0MjctYjg4ODdlMDExYjBlXkEyXkFqcGc@._V1_SX300.jpg'},
       {
         'id': 'tt5052448',
         'title': 'Get Out',
         'year': '2017',
         'director': 'Jordan Peele',
         'summary': 'A young African-American visits his white girlfriend\'s parents for the weekend, where his simmering uneasiness about their reception of him eventually reaches a boiling point.',
-        'poster': 'https://m.media-amazon.com/images/M/MV5BMjUxMDQwNjcyNl5BMl5BanBnXkFtZTcwNzcwMzc0Nw@@._V1_SX300.jpg'
-      },
+        'poster': 'https://m.media-amazon.com/images/M/MV5BMjUxMDQwNjcyNl5BMl5BanBnXkFtZTgwNzcwMzc0MTI@._V1_SX300.jpg'},
       {
         'id': 'tt7784604',
         'title': 'Hereditary',
         'year': '2018',
         'director': 'Ari Aster',
         'summary': 'A grieving family is haunted by tragic and disturbing occurrences after the death of their secretive grandmother.',
-        'poster': 'https://m.media-amazon.com/images/M/MV5BOTU5MDg3OGItZWQ1Ny00ZGVmLTg2YTUtMzBkYzQ1YWIwZGVkXkEyXkFqcGdeQXVyMjM4NTM5NDY@._V1_SX300.jpg'
+        'poster': 'https://m.media-amazon.com/images/M/MV5BNTEyZGQwODctYWJjZi00NjFmLTg3YmEtMzlhNjljOGZhMWMyXkEyXkFqcGc@._V1_SX300.jpg'
       },
     ],
     'Crime': [
@@ -146,7 +142,7 @@ class MovieCategoryData {
         'year': '1994',
         'director': 'Quentin Tarantino',
         'summary': 'The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.',
-        'poster': 'https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjA4XkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SX300.jpg'
+        'poster': 'https://m.media-amazon.com/images/M/MV5BYTViYTE3ZGQtNDBlMC00ZTAyLTkyODMtZGRiZDg0MjA2YThkXkEyXkFqcGc@._V1_SX300.jpg'
       },
       {
         'id': 'tt0099685',
@@ -154,7 +150,7 @@ class MovieCategoryData {
         'year': '1990',
         'director': 'Martin Scorsese',
         'summary': 'The story of Henry Hill and his life in the mob, covering his relationship with his wife Karen Hill and his mob partners Jimmy Conway and Tommy DeVito in the Italian-American crime syndicate.',
-        'poster': 'https://m.media-amazon.com/images/M/MV5BY2NkZjEzMDgtN2RjYy00YzM1LWFmU2ItMjY2NDshXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg'
+        'poster': 'https://m.media-amazon.com/images/M/MV5BN2E5NzI2ZGMtY2VjNi00YTRjLWI1MDUtZGY5OWU1MWJjZjRjXkEyXkFqcGc@._V1_SX300.jpg'
       },
       {
         'id': 'tt0114369',
@@ -162,7 +158,7 @@ class MovieCategoryData {
         'year': '1995',
         'director': 'David Fincher',
         'summary': 'Two detectives, a rookie and a veteran, hunt a serial killer who uses the seven deadly sins as his motives.',
-        'poster': 'https://m.media-amazon.com/images/M/MV5BMkdlszY0YWUtMjE2Yi00YzdhLWIwZGItYWNlZDZkMWU0MDZjXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_SX300.jpg'
+        'poster': 'https://m.media-amazon.com/images/M/MV5BY2IzNzMxZjctZjUxZi00YzAxLTk3ZjMtODFjODdhMDU5NDM1XkEyXkFqcGc@._V1_SX300.jpg'
       },
       {
         'id': 'tt0407887',

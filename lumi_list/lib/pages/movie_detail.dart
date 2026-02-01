@@ -75,7 +75,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   }
 }
 
-// toggle see later status
+// see later status
 Future<void> _toggleSeeLater() async {
   if (realImdbId == null) return;
   if (isSeeLater) {
@@ -205,6 +205,7 @@ void _showRatingDialog() {
                         label: userRating != null ? "My: $userRating" : "Rate",
                         onTap: _showRatingDialog,
                       ),
+                      //add to watch later list
                       _IconButton(
                         icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined,
                         iconColor: Colors.blueAccent,
