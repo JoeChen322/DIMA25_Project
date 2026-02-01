@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'search_page.dart';
-import 'me.dart';
+import 'me_page.dart'; // 
 import 'movie_detail.dart';
 import '../services/tmdb_api.dart';
-import'../services/omdb_api.dart';
+import '../services/omdb_api.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -13,14 +14,29 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _index = 1; 
+  String? _userEmail; // received email from LoginPage
 
-  // 页面切换逻辑
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // retrieve email from arguments
+    final args = ModalRoute.of(context)?.settings.arguments as Map?;
+    if (args != null && args.containsKey('email')) {
+      setState(() {
+        _userEmail = args['email'];
+      });
+    }
+  }
+
+  // logical body builder
   Widget _buildBody() {
     switch (_index) {
       case 0:
         return const SearchPage();
       case 2:
-        return const MyListPage();
+        // pass email to MePage
+        // ignore: prefer_if_null_operators
+        return MyListPage(email: _userEmail);
       default:
         return const HomeContent(); 
     }
@@ -30,10 +46,10 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true, // 让海报延伸到状态栏
+      extendBodyBehindAppBar: true, 
       
       appBar: _index == 2 
-    ? null  // 当处于 "Me" 页面时，移除外层的 AppBar
+    ? null  
     : AppBar(
         title: const Text("LumiList", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
@@ -41,8 +57,6 @@ class _HomePageState extends State<HomePage> {
         elevation: 0,
         foregroundColor: Colors.white,
       ),
-
-      
 
       body: _buildBody(),
 
@@ -54,17 +68,17 @@ class _HomePageState extends State<HomePage> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(
-      icon: Icon(Icons.search, color: Colors.white, size: 22), // 稍微减小图标尺寸
-      label: "Search",
-    ),
+            icon: Icon(Icons.search, color: Colors.white, size: 22),
+            label: "Search",
+          ),
           NavigationDestination(
-      icon: Icon(Icons.home, color: Colors.white, size: 22), 
-      label: "Home",
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.person, color: Colors.white, size: 22), 
-      label: "Me",
-    ),
+            icon: Icon(Icons.home, color: Colors.white, size: 22), 
+            label: "Home",
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person, color: Colors.white, size: 22), 
+            label: "Me",
+          ),
         ],
       ),
     );
@@ -106,32 +120,29 @@ class _HomeContentState extends State<HomeContent> {
     }
   }
 
-  // 统一的跳转方法
   void _navigateToDetail(dynamic movie) async {
-  // 1. 获取 TMDb 数字 ID
-  final int tmdbId = movie['id'];
-  
-  // 2. 调用新方法换取真正的 imdbID (tt号)
-  final String? realImdbId = await tmdbService.getImdbIdByTmdbId(tmdbId);
+    final int tmdbId = movie['id'];
+    final String? realImdbId = await tmdbService.getImdbIdByTmdbId(tmdbId);
 
-  final Map<String, dynamic> movieData = {
-    "Title": movie['title'] ?? movie['name'],
-    "Year": movie['release_date']?.split('-')[0] ?? "",
-    "Poster": "https://image.tmdb.org/t/p/w500${movie['poster_path']}", // TMDb 图片拼接
-    "Plot": movie['overview'],
-    "imdbID": realImdbId, // 现在有了真正的 tt 号，收藏功能就能正常工作了
-    "imdbRating": movie['vote_average']?.toString(),
-  };
+    final Map<String, dynamic> movieData = {
+      "Title": movie['title'] ?? movie['name'],
+      "Year": movie['release_date']?.split('-')[0] ?? "",
+      "Poster": "https://image.tmdb.org/t/p/w500${movie['poster_path']}",
+      "Plot": movie['overview'],
+      "imdbID": realImdbId,
+      "imdbRating": movie['vote_average']?.toString(),
+    };
 
-  if (mounted) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MovieDetailPage(movie: movieData),
-      ),
-    );
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MovieDetailPage(movie: movieData),
+        ),
+      );
+    }
   }
-}
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
@@ -143,7 +154,6 @@ class _HomeContentState extends State<HomeContent> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // 2. 点击大海报进入详情
           GestureDetector(
             onTap: () => _navigateToDetail(topMovie),
             child: Container(
@@ -191,7 +201,6 @@ class _HomeContentState extends State<HomeContent> {
               itemCount:_trendingMovies.length > 5 ? 5 : _trendingMovies.length,
               itemBuilder: (context, index) {
                 final movie = _trendingMovies[index];
-                // 3. 点击列表小海报进入详情
                 return GestureDetector(
                   onTap: () => _navigateToDetail(movie),
                   child: Container(

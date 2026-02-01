@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:ui'; 
 import 'classics_page.dart';
+import 'favorite_page.dart';
 
 class MyListPage extends StatelessWidget {
-  const MyListPage({super.key});
+  // received email from HomePage
+  final String? email; 
+
+  // add constructor
+  const MyListPage({super.key, this.email});
 
   @override
   Widget build(BuildContext context) {
@@ -67,8 +72,21 @@ class MyListPage extends StatelessWidget {
                     crossAxisSpacing: 16,
                     childAspectRatio: 1.3,
                     children: [
-                      _buildDarkItem(context, Colors.amber, "Favorites", Icons.star_rounded),
+                      // 1. Favorites
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const FavoritePage()),
+                          );
+                        },
+                        child: _buildDarkItem(context, Colors.amber, "Favorites", Icons.star_rounded),
+                      ),
+                      
+                      // 2. Watch Later
                       _buildDarkItem(context, Colors.redAccent, "Watch Later", Icons.access_time_filled_rounded),
+                      
+                      // 3. IMDb Classics
                       GestureDetector(
                         onTap: () {
                            Navigator.push(
@@ -76,9 +94,32 @@ class MyListPage extends StatelessWidget {
                              MaterialPageRoute(builder: (context) => const ClassicsPage()),
                             );
                        },
-                      child: _buildDarkItem(context, Colors.blueAccent, "IMDb Classics", Icons.movie_filter_rounded),
+                       child: _buildDarkItem(context, Colors.blueAccent, "IMDb Classics", Icons.movie_filter_rounded),
                       ),
-                      _buildDarkItem(context, Colors.purpleAccent, "Custom List", Icons.add_rounded),
+
+                      // 4. My Profile
+                      GestureDetector(
+                        onTap: () {
+                          // Navigate to Profile Page with email
+                          Navigator.pushNamed(
+                            context,
+                            '/profile',
+                            arguments: {
+                              'name': 'User Name', 
+                              'bio': 'Write something about yourself...',
+                              'phone': '+39 123 456 7890',
+                              'email': email, 
+                              'avatar': null, 
+                            },
+                          );
+                        },
+                        child: _buildDarkItem(
+                          context, 
+                          const Color(0xFF00E5FF), 
+                          "My Profile", 
+                          Icons.person_rounded 
+                        ),
+                      ),
                     ],
                   ),
                 ],

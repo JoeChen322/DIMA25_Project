@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/tmdb_api.dart'; // 确保路径正确
+import '../services/tmdb_api.dart'; // TMDB 
 import 'movie_detail.dart';
 
 class ClassicsPage extends StatefulWidget {
@@ -10,7 +10,6 @@ class ClassicsPage extends StatefulWidget {
 }
 
 class _ClassicsPageState extends State<ClassicsPage> {
-  // 注意：实际开发中建议将 API KEY 存放在配置文件中
   final TmdbService _tmdbService = TmdbService(
       'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
 
@@ -25,14 +24,14 @@ class _ClassicsPageState extends State<ClassicsPage> {
 
   Future<void> _fetchClassics() async {
     try {
-      // 使用 getTopRatedMovies 接口获取经典高分电影
+      // use getTopRatedMovies to fetch top rated movies
       final movies = await _tmdbService.getTopRatedMovies(); 
       setState(() {
         _topMovies = movies;
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint("获取经典电影失败: $e");
+      debugPrint("fail: $e");
       setState(() => _isLoading = false);
     }
   }
