@@ -208,7 +208,7 @@ void _showRatingDialog() {
                       _IconButton(
                         icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined,
                         iconColor: Colors.blueAccent,
-                        label: isSeeLater ? "In Later" : "See Later",
+                        label: isSeeLater ? "In Later" : "Watch Later",
                         onTap: _toggleSeeLater,
                       ),
                     ],

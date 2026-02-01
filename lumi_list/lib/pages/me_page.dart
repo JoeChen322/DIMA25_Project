@@ -4,10 +4,8 @@ import 'classics_page.dart';
 import 'favorite_page.dart';
 
 class MyListPage extends StatelessWidget {
-  // received email from HomePage
   final String? email; 
 
-  // add constructor
   const MyListPage({super.key, this.email});
 
   @override
@@ -83,8 +81,11 @@ class MyListPage extends StatelessWidget {
                         child: _buildDarkItem(context, Colors.amber, "Favorites", Icons.star_rounded),
                       ),
                       
-                      // 2. Watch Later
-                      _buildDarkItem(context, Colors.redAccent, "Watch Later", Icons.access_time_filled_rounded),
+                      // 2. Watch Later (修复了这里的参数和嵌套错误)
+                      GestureDetector(
+                        onTap: () => Navigator.pushNamed(context, '/seelater'),
+                        child: _buildDarkItem(context, Colors.redAccent, "Watch Later", Icons.access_time_filled_rounded),
+                      ),
                       
                       // 3. IMDb Classics
                       GestureDetector(
@@ -100,7 +101,6 @@ class MyListPage extends StatelessWidget {
                       // 4. My Profile
                       GestureDetector(
                         onTap: () {
-                          // Navigate to Profile Page with email
                           Navigator.pushNamed(
                             context,
                             '/profile',

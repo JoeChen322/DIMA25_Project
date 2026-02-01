@@ -13,6 +13,7 @@ import 'pages/edit_profile_page.dart';
 import 'pages/forgot_password_page.dart';
 import 'pages/splash_page.dart';
 
+import 'pages/see_later_page.dart';
 
 final Map<String, WidgetBuilder> appRoutes = {
   '/': (context) => const HomePage(),
@@ -25,4 +26,5 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/search': (context) => const SearchPage(),
   //'/detail': (context) => const MovieDetailPage(),
   '/mylist': (context) => const MyListPage(),
+  '/seelater': (context) => const SeeLaterPage(),
 };

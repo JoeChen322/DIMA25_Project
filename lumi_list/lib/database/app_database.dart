@@ -75,7 +75,30 @@ class AppDatabase {
             )
           ''');
         }
+
+        if (oldVersion < 4) {
+          // Upgrade to version 4: Create see_later table
+          await db.execute('''
+            CREATE TABLE see_later (
+              imdb_id TEXT PRIMARY KEY,
+              title TEXT,
+              poster TEXT
+            )
+          ''');
+        }
+        if (oldVersion < 4) {
+          // Future upgrades can be handled here
+          await db.execute('''
+            CREATE TABLE favorite (
+              imdb_id TEXT PRIMARY KEY,
+              title TEXT,
+              rating INTEGER,
+              poster TEXT
+            )
+          ''');
+        }
       },
     );
+    
   }
 }
