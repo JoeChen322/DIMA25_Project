@@ -1,3 +1,6 @@
+/*to show the movie name, poster, summary, cast, ratings from several platforms, 
+and allow user to favorite and rate the movie*/
+
 import 'package:flutter/material.dart';
 import '../widgets/cast_strip.dart';
 import '../models/cast.dart';
@@ -5,6 +8,7 @@ import '../services/tmdb_api.dart';
 import '../services/omdb_api.dart'; 
 import '../database/favorite.dart';
 import '../database/personal_rate.dart';
+import '../database/seelater.dart';
 class MovieDetailPage extends StatefulWidget {
   final Map<String, dynamic> movie;
 
@@ -18,6 +22,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   bool isFavorite = false;
   int? userRating; 
   bool _isExpanded=false;
+  bool isSeeLater = false;
 
   final TmdbService tmdbService = TmdbService(
       'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
@@ -38,7 +43,8 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     int? tmdbId;
 
     // change all ids to both TMDb and IMDB into IMDB ID
-    if (id != null && !id.startsWith('tt')) {
+    if (id != null && !id.startsWith('tt'))
+    {
       tmdbId = int.parse(id);
       realImdbId = await tmdbService.getImdbIdByTmdbId(tmdbId);
     } else if (id != null && id.startsWith('tt')) {
@@ -62,7 +68,27 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       }
     }
   }
+  Future<void> _checkSeeLaterStatus() async {
+  if (realImdbId != null) {
+    final status = await SeeLaterDao.isSeeLater(realImdbId!);
+    setState(() => isSeeLater = status);
+  }
+}
 
+// toggle see later status
+Future<void> _toggleSeeLater() async {
+  if (realImdbId == null) return;
+  if (isSeeLater) {
+    await SeeLaterDao.deleteSeeLater(realImdbId!);
+  } else {
+    await SeeLaterDao.insertSeeLater(
+      imdbId: realImdbId!,
+      title: widget.movie['Title'] ?? "Unknown",
+      poster: widget.movie['Poster'] ?? "",
+    );
+  }
+  setState(() => isSeeLater = !isSeeLater);
+}
   Future<void> _loadCast(int tmdbId) async {
     try {
       final result = await tmdbService.getCast(tmdbId);
@@ -179,8 +205,15 @@ void _showRatingDialog() {
                         label: userRating != null ? "My: $userRating" : "Rate",
                         onTap: _showRatingDialog,
                       ),
+                      _IconButton(
+                        icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined,
+                        iconColor: Colors.blueAccent,
+                        label: isSeeLater ? "In Later" : "See Later",
+                        onTap: _toggleSeeLater,
+                      ),
                     ],
                   ),
+                  
                   const SizedBox(height: 20),
 
                   // summary section with expandable text

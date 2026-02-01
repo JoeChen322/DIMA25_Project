@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/tmdb_api.dart'; 
 import 'movie_detail.dart';
 import 'dart:ui'; 
-
+import 'movieCatergory.dart';
+import 'CategoryDetail.dart';
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -184,6 +185,8 @@ class _SearchPageState extends State<SearchPage> {
                               _buildCategoryCard("Romance", Colors.purpleAccent),
                             ],
                           ),
+                          
+
                         ],
                       ),
                     ),
@@ -306,8 +309,17 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _buildCategoryCard(String title, Color color) {
-    return Container(
+Widget _buildCategoryCard(String title, Color color) {
+  return GestureDetector( 
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CategoryDetailPage(category: title),
+        ),
+      );
+    },
+    child: Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
@@ -315,11 +327,19 @@ class _SearchPageState extends State<SearchPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Center(
-        child: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+      child: Center( // 
+        child: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

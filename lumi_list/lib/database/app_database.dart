@@ -19,7 +19,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 4,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE favorites (
@@ -60,7 +60,14 @@ class AppDatabase {
             timestamp INTEGER
           )
         ''');
-        
+        // See Later table
+          await db.execute('''
+            CREATE TABLE see_later (
+              imdb_id TEXT PRIMARY KEY,
+              title TEXT,
+              poster TEXT
+            )
+          ''');
       },
     );
   }
