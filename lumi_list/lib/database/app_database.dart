@@ -19,16 +19,9 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 4,
       onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE favorites (
-            imdb_id TEXT PRIMARY KEY,
-            title TEXT,
-            poster TEXT,
-            rating INTEGER
-          )
-        ''');
+        
 
         // User table for authentication
         await db.execute('''
@@ -53,7 +46,7 @@ class AppDatabase {
         ''');
         // Personal ratings table
         await db.execute('''
-          CREATE TABLE personal_rate (
+          CREATE TABLE personal_ratings (
             imdb_id TEXT PRIMARY KEY,
             title TEXT,
             rating INTEGER,
@@ -61,6 +54,20 @@ class AppDatabase {
           )
         ''');
         
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        
+        if (oldVersion < 4) {
+          // Upgrade to version 3: Create personal_rate table
+          await db.execute('''
+            CREATE TABLE personal_ratings (
+              imdb_id TEXT PRIMARY KEY,
+              title TEXT,
+              rating INTEGER,
+              timestamp INTEGER
+            )
+          ''');
+        }
       },
     );
   }
