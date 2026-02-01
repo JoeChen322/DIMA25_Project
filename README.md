@@ -23,3 +23,5 @@
 - adjust search relevance
 - connect database to my favourite
 - build database for the personal rating
+- fill ME page
+- in SEARCH page fill the movie types
