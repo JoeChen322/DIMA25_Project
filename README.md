@@ -18,10 +18,9 @@
 - /pages/movie_detail : show the movie info and the actors info, support to rating and add the movie to the favorite list
 ## TODO
 - pull down to show the complete poster
-- fold when the summary is too long
-- hide the items without the poster
 - adjust search relevance
-- connect database to my favourite
-- build database for the personal rating
-- fill ME page
+- add director
 - in SEARCH page fill the movie types
+- watch later item
+- change the detail movie page
+- light and dark modes
