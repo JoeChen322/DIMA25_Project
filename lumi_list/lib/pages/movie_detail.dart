@@ -17,7 +17,8 @@ class MovieDetailPage extends StatefulWidget {
 class _MovieDetailPageState extends State<MovieDetailPage> {
   bool isFavorite = false;
   int? userRating; 
-  
+  bool _isExpanded=false;
+
   final TmdbService tmdbService = TmdbService(
       'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
 
@@ -181,9 +182,47 @@ void _showRatingDialog() {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  const Text("Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+
+                  // summary section with expandable text
+                  const Text( "Summary",style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),),
                   const SizedBox(height: 8),
-                  Text(fullOmdbData?['Plot'] ?? widget.movie['Plot'] ?? "No summary available.", style: const TextStyle(color: Colors.grey, fontSize: 16)),
+
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isExpanded = !_isExpanded;
+                      });
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.movie['Plot'] ?? "No summary available.",
+                          maxLines: _isExpanded ? null : 4,
+                          overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                        
+                        
+                        Align(
+                          alignment: Alignment.centerRight, 
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Text(
+                              _isExpanded ? "Fold" : "More...",
+                              style: const TextStyle(
+                                color: Colors.deepPurpleAccent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  //const SizedBox(height: 8),
+                  //Text(fullOmdbData?['Plot'] ?? widget.movie['Plot'] ?? "No summary available.", style: const TextStyle(color: Colors.grey, fontSize: 16)),
                   const SizedBox(height: 20),
                   const Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 10),
