@@ -1,3 +1,4 @@
+/*edit user profile info, including avatar, name, bio, phone number*/
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';

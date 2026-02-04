@@ -1,5 +1,6 @@
 /*for serch movies using TMDb API*/
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../services/tmdb_api.dart'; 
 import 'movie_detail.dart';
 import 'dart:ui'; 

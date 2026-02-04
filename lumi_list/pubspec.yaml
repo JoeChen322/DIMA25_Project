@@ -46,7 +46,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1  # <--- 添加这一行
 
 
-
+  sqflite_common_ffi: ^2.3.0
     #logo_icon
 
   # The "flutter_lints" package below contains a set of recommended lints to

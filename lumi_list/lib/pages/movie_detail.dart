@@ -1,5 +1,6 @@
 /*to show the movie name, poster, summary, cast, ratings from several platforms, 
 and allow user to favorite and rate the movie*/
+/*get info from both TMDb API and OMDb API*/
 
 import 'package:flutter/material.dart';
 import '../widgets/cast_strip.dart';
@@ -40,6 +41,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     _initializeData();
   }
 
+  /*------isolated net request，use future to load parallelly and avoid blocking the UI------ */
   Future<void> _initializeData() async {
     String? id = widget.movie['imdbID']; 
     int? tmdbId;
@@ -114,7 +116,7 @@ Future<void> _toggleSeeLater() async {
   }
   setState(() => isSeeLater = !isSeeLater);
  }
-
+  
   Future<void> _loadCast(int tmdbId) async {
     try {
       final result = await tmdbService.getCast(tmdbId);
@@ -145,8 +147,9 @@ void _showRatingDialog() {
     context: context,
     builder: (context) => AlertDialog(
       title: const Text("Rate this Movie"),
-      content: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      content: Wrap(
+        //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        alignment: WrapAlignment.center,
         children: List.generate(5, (index) => IconButton(
           icon: Icon(
             Icons.star, 
@@ -263,7 +266,7 @@ void _showRatingDialog() {
                           _plot ?? "No summary available.",
                           maxLines: _isExpanded ? null : 4,
                           overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.grey, fontSize: 16),
+                          style: const TextStyle(color: Color.fromARGB(255, 215, 214, 214), fontSize: 16),
                         ),
                         
                         
@@ -300,6 +303,9 @@ void _showRatingDialog() {
                       color: Colors.white.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
                     ),
+
+
+
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -325,8 +331,8 @@ void _showRatingDialog() {
   Widget _buildRatingLine(String platform, String score) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        alignment: WrapAlignment.center,
         children: [
           Text(platform, style: const TextStyle(color: Colors.white70)),
           Text(score, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),

@@ -1,3 +1,4 @@
+/*Lauching page showing app logo and name before redirecting to login page*/
 import 'dart:async';
 import 'package:flutter/material.dart';
 
@@ -37,7 +38,7 @@ class _SplashPageState extends State<SplashPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 1. App Logo
+            // App Logo
             Container(
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration( 
@@ -54,7 +55,7 @@ class _SplashPageState extends State<SplashPage> {
             
             const SizedBox(height: 30),
             
-            // 2. App Name
+            // App Name
             const Text(
               "LumiList",
               style: TextStyle(
@@ -67,7 +68,7 @@ class _SplashPageState extends State<SplashPage> {
             
             const SizedBox(height: 10),
             
-            // 3. Slogan part
+            // Slogan part
             Text(
               "Your Movie Collection",
               style: TextStyle(
@@ -79,7 +80,7 @@ class _SplashPageState extends State<SplashPage> {
 
             const SizedBox(height: 80),
 
-            // 4. Loading Indicator
+            // Loading Indicator
             const CircularProgressIndicator(
               color: Colors.white,
               strokeWidth: 3,

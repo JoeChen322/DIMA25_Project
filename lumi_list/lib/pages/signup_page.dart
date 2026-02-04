@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// 1. Import your database helper
 import 'package:lumi_list/database/app_database.dart'; 
 
 class SignupPage extends StatefulWidget {

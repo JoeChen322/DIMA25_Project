@@ -34,7 +34,7 @@ class CastStrip extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 36,
-                      backgroundColor: Colors.grey.shade300,
+                      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                       backgroundImage: c.profileUrl != null
                           ? NetworkImage(c.profileUrl!)
                           : null,

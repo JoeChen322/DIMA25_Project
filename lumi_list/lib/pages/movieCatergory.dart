@@ -1,6 +1,6 @@
-/*store top10 movies of several categories as static data for category detail page
-using OMDB API*/
-
+/*store top10 movies of several categories as static data for category detail page*/
+/*not change frequently, small data size,
+so no need to fetch from API, and can be easily updated by editing this statistic file*/
 
 class MovieCategoryData {
   static const Map<String, List<Map<String, String>>> categories = {
