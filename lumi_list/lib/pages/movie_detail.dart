@@ -348,10 +348,11 @@ Widget _IconButton({required IconData icon, required Color iconColor, required S
     onTap: onTap,
     borderRadius: BorderRadius.circular(8),
     child: Container(
-      width: 100, height: 50,
+      width: 93, height: 50,
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        runAlignment: WrapAlignment.center,
         children: [
           Icon(icon, color: iconColor, size: 22),
           const SizedBox(width: 4),

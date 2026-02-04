@@ -3,47 +3,51 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:lumi_list/database/favorite.dart';
 import 'package:lumi_list/database/seelater.dart';
 import 'package:lumi_list/database/personal_rate.dart';
+import 'package:lumi_list/database/app_database.dart';
 
 void main() {
   // 初始化 FFI 数据库驱动，这是在电脑上运行测试的关键
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  group('数据库 DAO 层整合测试', () {
-    const String mockId = 'tt1375666'; // Inception 的 ID
+  group('Database DAO unitest', () {
+    const String mockId = 'tt1375668'; // Inception 的 ID
     const String mockTitle = 'Inception';
 
-    // 每个测试运行前，可以确保数据库是干净的
     setUp(() async {
-      // 可以在此处添加清理逻辑
+      final dbPath = await databaseFactory.getDatabasesPath();
+      final path = '$dbPath/lumilist.db';
+      if (await databaseFactory.databaseExists(path)) {
+        await databaseFactory.deleteDatabase(path);
+      }
+  await AppDatabase.database;
     });
 
-    // --- 测试 Favorite 表 ---
-    test('验证 FavoriteDao 的增删改查', () async {
-      // 1. 初始状态应不在收藏夹
+    // ---  Favorite ---
+    test('CRUD of Favorite DAO', () async {
+      // 1.default is not favorite
       bool isFav = await FavoriteDao.isFavorite(mockId);
       expect(isFav, isFalse);
 
-      // 2. 插入数据
+      // 2. insert favorite
       await FavoriteDao.insertFavorite(
         imdbId: mockId,
         title: mockTitle,
         poster: 'https://example.com/p.jpg',
       );
 
-      // 3. 验证状态更新
+      // 3. update favorite status
       isFav = await FavoriteDao.isFavorite(mockId);
       expect(isFav, isTrue);
 
-      // 4. 删除数据
+      // 4. delete favorite
       await FavoriteDao.deleteFavorite(mockId);
       isFav = await FavoriteDao.isFavorite(mockId);
       expect(isFav, isFalse);
     });
 
     // --- 测试 See Later 表 ---
-    test('验证 SeeLaterDao 的持久化逻辑', () async {
-      // 模拟进入详情页并点击 "Later" 按钮的操作
+    test('CRUD of SeeLater Dao', () async {
       await SeeLaterDao.insertSeeLater(
         imdbId: mockId,
         title: mockTitle,
@@ -54,9 +58,9 @@ void main() {
       expect(isLater, isTrue);
     });
 
-    // --- 测试评分表 (Personal Ratings) ---
-    test('验证评分的插入与更新', () async {
-      // 1. 第一次评分
+    // --- Personal Ratings---
+    test('CRUD of PersonalRate Dao', () async {
+      // 1. first insert
       await PersonalRateDao.insertOrUpdateRate(
         imdbId: mockId,
         title: mockTitle,
@@ -65,14 +69,14 @@ void main() {
       int? score = await PersonalRateDao.getRating(mockId);
       expect(score, 4);
 
-      // 2. 更新评分（覆盖测试）
+      // 2. update rating
       await PersonalRateDao.insertOrUpdateRate(
         imdbId: mockId,
         title: mockTitle,
         rating: 5,
       );
       score = await PersonalRateDao.getRating(mockId);
-      expect(score, 5); // 验证 ConflictAlgorithm.replace 生效
+      expect(score, 5); 
     });
   });
 }
