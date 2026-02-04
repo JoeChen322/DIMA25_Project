@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import '../services/tmdb_api.dart'; 
 import 'movie_detail.dart';
 import 'dart:ui'; 
-import 'movieCatergory.dart';
 import 'CategoryDetail.dart';
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});

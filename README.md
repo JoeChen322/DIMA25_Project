@@ -19,8 +19,4 @@
 ## TODO
 - pull down to show the complete poster
 - adjust search relevance
-- add director
-- in SEARCH page fill the movie types
-- watch later item
-- change the detail movie page
 - light and dark modes

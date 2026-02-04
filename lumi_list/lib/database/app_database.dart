@@ -37,11 +37,11 @@ class AppDatabase {
         ''');
         // Favorite movies table
         await db.execute('''
-          CREATE TABLE favorite (
+          CREATE TABLE favorites (
             imdb_id TEXT PRIMARY KEY,
             title TEXT,
-            rating INTEGER,
-            poster STRING
+            poster STRING,
+            rating INTEGER
           )
         ''');
         // Personal ratings table
@@ -64,10 +64,9 @@ class AppDatabase {
       },
     onUpgrade: (db, oldVersion, newVersion) async {
     if (oldVersion < 5) {
-    // 使用 IF NOT EXISTS 确保不会因为表已存在而报错
     await db.execute('CREATE TABLE IF NOT EXISTS personal_ratings (imdb_id TEXT PRIMARY KEY, title TEXT, rating INTEGER, timestamp INTEGER)');
     await db.execute('CREATE TABLE IF NOT EXISTS see_later (imdb_id TEXT PRIMARY KEY, title TEXT, poster TEXT)');
-    await db.execute('CREATE TABLE IF NOT EXISTS favorite (imdb_id TEXT PRIMARY KEY, title TEXT, rating INTEGER, poster TEXT)');
+    await db.execute('CREATE TABLE IF NOT EXISTS favorites (imdb_id TEXT PRIMARY KEY, title TEXT, poster TEXT, rating INTEGER)');
   }
 },
     );

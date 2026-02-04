@@ -25,17 +25,30 @@ class _ClassicsPageState extends State<ClassicsPage> {
     _fetchClassics();
   }
 
+  // ... 前面 import 部分保持不变 ...
+
   Future<void> _fetchClassics() async {
     try {
-      // use getTopRatedMovies to fetch top rated movies
-      final movies = await _tmdbService.getTopRatedMovies(); 
-      setState(() {
-        _topMovies = movies;
-        _isLoading = false;
-      });
+      // 👈 核心修改：并发请求前 3 页数据 (每页 20 条，3 页共 60 条)
+      final results = await Future.wait([
+        _tmdbService.getTopRatedMovies(page: 1),
+        _tmdbService.getTopRatedMovies(page: 2),
+        _tmdbService.getTopRatedMovies(page: 3),
+      ]);
+
+      // 将三页数据合并为一个 List
+      List<dynamic> allMovies = results.expand((x) => x).toList();
+
+      if (mounted) {
+        setState(() {
+          // 👈 核心修改：只取前 50 名
+          _topMovies = allMovies.take(50).toList();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint("fail: $e");
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -44,16 +57,31 @@ class _ClassicsPageState extends State<ClassicsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
       appBar: AppBar(
+        // 👈 建议修改标题，让用户知道是 Top 50
         title: const Text("IMDb Top 50", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        // 使用你之前喜欢的半透明圆圈返回按钮样式
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
           : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _topMovies.length > 50 ? 50 : _topMovies.length,
+              // 现在 _topMovies.length 就是 50 了
+              itemCount: _topMovies.length,
               itemBuilder: (context, index) {
                 final movie = _topMovies[index];
                 return _buildMovieItem(movie, index + 1);
@@ -61,6 +89,8 @@ class _ClassicsPageState extends State<ClassicsPage> {
             ),
     );
   }
+
+  // _buildMovieItem 部分保持不变 ...
 
   Widget _buildMovieItem(dynamic movie, int rank) {
     return GestureDetector(
