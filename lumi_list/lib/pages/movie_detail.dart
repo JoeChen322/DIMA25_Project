@@ -10,6 +10,7 @@ import '../services/omdb_api.dart';
 import '../database/favorite.dart';
 import '../database/personal_rate.dart';
 import '../database/seelater.dart';
+import '../widgets/icon_action_button.dart';
 class MovieDetailPage extends StatefulWidget {
   final Map<String, dynamic> movie;
 
@@ -224,21 +225,21 @@ void _showRatingDialog() {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _IconButton(
+                      MovieActionButton(
                         icon: isFavorite ? Icons.favorite : Icons.favorite_border,
                         iconColor: Colors.red,
                         label: isFavorite ? "Saved" : "My List",
                         onTap: _toggleFavorite,
                       ),
                       // star rating buttons
-                      _IconButton(
+                      MovieActionButton(
                         icon: Icons.star,
                         iconColor: userRating != null ? Colors.amber : Colors.grey,
                         label: userRating != null ? "My: $userRating" : "Rate",
                         onTap: _showRatingDialog,
                       ),
                       //add to watch later list
-                      _IconButton(
+                      MovieActionButton(
                         icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined,
                         iconColor: Colors.blueAccent,
                         label: isSeeLater ? "In Later" : "Later",
@@ -340,25 +341,4 @@ void _showRatingDialog() {
       ),
     );
   }
-}
-
-//  _IconButton form
-Widget _IconButton({required IconData icon, required Color iconColor, required String label, required VoidCallback onTap}) {
-  return InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(8),
-    child: Container(
-      width: 93, height: 50,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        runAlignment: WrapAlignment.center,
-        children: [
-          Icon(icon, color: iconColor, size: 22),
-          const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    ),
-  );
 }

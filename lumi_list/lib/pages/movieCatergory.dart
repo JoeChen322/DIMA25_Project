@@ -192,7 +192,7 @@ class MovieCategoryData {
         'year': '2004',
         'director': 'Michel Gondry',
         'summary': 'When their relationship turns sour, a couple undergoes a medical procedure to have each other erased from their memories.',
-        'poster': 'https://m.media-amazon.com/images/M/MV5BMTY4NzcwODg3Nl5BMl5BanBnXkFtZTcwNzAxNjgzMQ@@._V1_SX300.jpg'
+        'poster': 'https://m.media-amazon.com/images/M/MV5BMTY4NzcwODg3Nl5BMl5BanBnXkFtZTcwNTEwOTMyMw@@._V1_SX300.jpg'
       },
       {
         'id': 'tt2194499',

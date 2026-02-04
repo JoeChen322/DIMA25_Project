@@ -1,39 +1,43 @@
 import 'package:flutter/material.dart';
 
-class IconActionButton extends StatelessWidget {
+class MovieActionButton extends StatelessWidget {
   final IconData icon;
+  final Color iconColor;
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback onTap;
 
-  const IconActionButton({
+  const MovieActionButton({
     super.key,
     required this.icon,
+    required this.iconColor,
     required this.label,
-    required this.onPressed,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onPressed,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        width: 93,
+        height: 50,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          runAlignment: WrapAlignment.center,
           children: [
-            Icon(icon, size: 18, color: Colors.black87),
-            const SizedBox(width: 6),
+            Icon(icon, color: iconColor, size: 22),
+            const SizedBox(width: 4),
             Text(
               label,
               style: const TextStyle(
+                color: Colors.black,
                 fontSize: 13,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

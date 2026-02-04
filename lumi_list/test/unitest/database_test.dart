@@ -6,7 +6,6 @@ import 'package:lumi_list/database/personal_rate.dart';
 import 'package:lumi_list/database/app_database.dart';
 
 void main() {
-  // 初始化 FFI 数据库驱动，这是在电脑上运行测试的关键
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
@@ -46,7 +45,6 @@ void main() {
       expect(isFav, isFalse);
     });
 
-    // --- 测试 See Later 表 ---
     test('CRUD of SeeLater Dao', () async {
       await SeeLaterDao.insertSeeLater(
         imdbId: mockId,
