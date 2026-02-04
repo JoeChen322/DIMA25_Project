@@ -123,7 +123,7 @@ Future<List<dynamic>> searchMovies(String query) async {
   }
 }
 
-Future<List<dynamic>> getTopRatedMovies() async {
+Future<List<dynamic>> getTopRatedMovies({int page = 1}) async {
   try {
     final res = await Dio().get(
       '$_baseUrl/movie/top_rated', // 
@@ -135,7 +135,7 @@ Future<List<dynamic>> getTopRatedMovies() async {
       ),
       queryParameters: {
         'language': 'en-US',
-        'page': 1, // 
+        'page': page,
       },
     );
     
