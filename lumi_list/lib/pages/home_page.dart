@@ -3,7 +3,6 @@ import 'search_page.dart';
 import 'me_page.dart'; // 
 import 'movie_detail.dart';
 import '../services/tmdb_api.dart';
-import '../services/omdb_api.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
