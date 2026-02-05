@@ -1,10 +1,12 @@
 /*for serch movies using TMDb API*/
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/tmdb_api.dart'; 
 import 'movie_detail.dart';
 import 'dart:ui'; 
 import 'CategoryDetail.dart';
+import '../database/favorite.dart';
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
 
@@ -19,11 +21,26 @@ class _SearchPageState extends State<SearchPage> {
   List<dynamic> _movies = [];
   bool _isLoading = false;
   String? _errorMessage;
-
+  String? _favoriteGenre;
   // all use TMDb Service
   final TmdbService _tmdbService = TmdbService(
       'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
-
+  @override
+/*-------------guess you like genre-----------*/
+  void initState() {
+      super.initState();
+      _loadFavoriteGenre(); 
+    }
+    Future<void> _loadFavoriteGenre() async {
+      final genre = await FavoriteDao.getMostFrequentGenre();
+      print("Debug: Found most frequent genre: $genre");
+      if (mounted) {
+        setState(() {
+          _favoriteGenre = genre;
+        });
+      }
+    }
+/*-----------------------search---------------------*/
   Future<void> _search() async {
     final query = _controller.text.trim();
     if (query.isEmpty) return;
@@ -116,7 +133,7 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
 
-                // search bar
+                // --------------search bar----------------------
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   child: Container(
@@ -142,8 +159,33 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                     ),
                   ),
-                ),
+                ),           
 
+              // ---  Guess you like  ---
+              
+               const SizedBox(height: 24),
+              if (_favoriteGenre != null) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: Row(
+                    children: [
+                      const Text(
+                        "Guess Your Fabourite Catergory: ",
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                      Text(
+                          _favoriteGenre!,
+                          style: const TextStyle(
+                            color: Colors.deepPurpleAccent, 
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
                 // default view when no search has been made
                 if (!_isLoading && _movies.isEmpty && _errorMessage == null)
                   Expanded(

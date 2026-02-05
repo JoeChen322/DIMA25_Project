@@ -24,10 +24,14 @@ class TmdbService {
 
     debugPrint('TMDb find response: ${res.data}');
 
-    final results = res.data['movie_results'] as List?;
-    if (results == null || results.isEmpty) return null;
+    // MOVIE
+    final movieResults = res.data['movie_results'] as List?;
+    if (movieResults != null && movieResults.isNotEmpty) return movieResults[0]['id'];
+    // TV Ser
+    final tvResults = res.data['tv_results'] as List?;
+    if (tvResults != null && tvResults.isNotEmpty) return tvResults[0]['id'];
 
-    return results[0]['id'];
+    return null;
   } catch (e) {
     debugPrint('TMDb find error: $e');
     return null;

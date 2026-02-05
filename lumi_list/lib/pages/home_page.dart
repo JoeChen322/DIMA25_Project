@@ -109,7 +109,7 @@ class _HomeContentState extends State<HomeContent> {
       final movies = await tmdbService.getTrendingMovies();
       if (mounted) {
         setState(() {
-          _trendingMovies = movies;
+          _trendingMovies = movies.where((m) => m['media_type'] == 'movie' || m['media_type'] == null).toList();
           _isLoading = false;
         });
       }

@@ -19,7 +19,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         
 
@@ -41,6 +41,7 @@ class AppDatabase {
             imdb_id TEXT PRIMARY KEY,
             title TEXT,
             poster STRING,
+            genre TEXT,
             rating INTEGER
           )
         ''');
@@ -63,11 +64,11 @@ class AppDatabase {
           ''');
       },
     onUpgrade: (db, oldVersion, newVersion) async {
-    if (oldVersion < 5) {
+    if (oldVersion < 6) {
     await db.execute('CREATE TABLE IF NOT EXISTS personal_ratings (imdb_id TEXT PRIMARY KEY, title TEXT, rating INTEGER, timestamp INTEGER)');
     await db.execute('CREATE TABLE IF NOT EXISTS see_later (imdb_id TEXT PRIMARY KEY, title TEXT, poster TEXT)');
-    await db.execute('CREATE TABLE IF NOT EXISTS favorites (imdb_id TEXT PRIMARY KEY, title TEXT, poster TEXT, rating INTEGER)');
-  }
+    await db.execute('CREATE TABLE IF NOT EXISTS favorites (imdb_id TEXT PRIMARY KEY, title TEXT, poster TEXT, genre TEXT, rating INTEGER)');
+        }
 },
     );
     

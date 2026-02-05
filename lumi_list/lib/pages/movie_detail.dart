@@ -36,6 +36,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   String _plot="Loading Summary...";
   String _year = "NA";
   String _director = "No Info";
+  String _genre = "No Info";
   @override
   void initState() {
     super.initState();
@@ -73,6 +74,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           isFavorite = favoriteStatus;
           isSeeLater = laterStatus;
           userRating = savedRating;
+
         });
       }
     }
@@ -87,6 +89,7 @@ Future<void> _loadOmdbDetails(String id) async {
         _director = details['Director'] ?? "No Info";
         _plot = details['Plot'] ?? "No summary available.";
         _year = details['Year'] ?? "";
+        _genre = details['Genre'] ?? "No Info";
       });
     }
   } catch (e) {
@@ -136,7 +139,7 @@ Future<void> _toggleSeeLater() async {
         imdbId: realImdbId!,
         title: widget.movie['Title'] ?? "Unknown",
         poster: widget.movie['Poster'] ?? "",
-        
+        genre: _genre,
       );
     }
     setState(() => isFavorite = !isFavorite);
@@ -185,6 +188,10 @@ void _showRatingDialog() {
     String rotten = "No Info";
     String meta = "No Info";
 
+    /*---------split genre string into list----------  */  
+    List<String> genreList = _genre.split(',').map((e) => e.trim()).toList();
+    genreList.removeWhere((element) => element == "No Info" || element.isEmpty);
+   /*-----------------------------------------------*/
     final ratings = fullOmdbData?['Ratings'] as List?;
     if (ratings != null) {
       for (var r in ratings) {
@@ -250,7 +257,7 @@ void _showRatingDialog() {
                   
                   const SizedBox(height: 20),
 
-                  // summary section with expandable text
+                  /*-----------------summary section with expandable text-------*/
                   const Text( "Summary",style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),),
                   const SizedBox(height: 8),
                   
@@ -288,14 +295,37 @@ void _showRatingDialog() {
                       ],
                     ),
                   ),
-                  //const SizedBox(height: 8),
+                  const SizedBox(height: 20),
+
+                  /*--- ---------------Genre Tags-------------------------*/
+                  if (genreList.isNotEmpty)
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8.0, 
+                      runSpacing: 4.0, 
+                      children: genreList.map((genre) => Chip(
+                        label: Text(
+                          genre,
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        backgroundColor: const Color.fromARGB(255, 87, 33, 235).withOpacity(0.3),
+                        side: BorderSide(color: const Color.fromARGB(255, 95, 47, 225).withOpacity(0.5)),
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                        visualDensity: VisualDensity.compact,
+                      )).toList(),
+                    ),
+                  
+                  if (genreList.isNotEmpty) const SizedBox(height: 20),
+                  
+                /*-------------------------------cast section---------------------------------*/
+                
                   //Text(fullOmdbData?['Plot'] ?? widget.movie['Plot'] ?? "No summary available.", style: const TextStyle(color: Colors.grey, fontSize: 16)),
                   const SizedBox(height: 20),
                   const Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 10),
                   isLoadingCast ? const Center(child: CircularProgressIndicator()) : CastStrip(cast: cast),
                   
-                  // Ratings from 
+                  /*-------------------------Ratings from --------------------------------*/
                   const SizedBox(height: 30),
                   Container(
                     width: double.infinity, 

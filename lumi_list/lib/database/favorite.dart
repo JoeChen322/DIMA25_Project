@@ -9,6 +9,7 @@ class FavoriteDao {
     required String title,
     required String poster,
     int? rating,
+    String? genre,
   }) async {
     final db = await AppDatabase.database;
     await db.insert(
@@ -17,7 +18,9 @@ class FavoriteDao {
         'imdb_id': imdbId,
         'title': title,
         'poster': poster,
-        'rating': rating,
+        'genre': genre,
+        'rating': rating
+
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -49,4 +52,28 @@ class FavoriteDao {
     final db = await AppDatabase.database;
     return db.query('favorites');
   }
+  
+  static Future<String?> getMostFrequentGenre() async {
+
+    final favorites = await getAllFavorites();
+    if (favorites.isEmpty) return null;
+    Map<String, int> genreCounts = {};
+
+    for (var movie in favorites) {
+      String? genreStr = movie['genre']; 
+      if (genreStr != null && genreStr != "No Info" && genreStr.isNotEmpty) {
+        List<String> genres = genreStr.split(',').map((g) => g.trim()).toList();
+        
+        for (var genre in genres) {
+          genreCounts[genre] = (genreCounts[genre] ?? 0) + 1;
+        }
+      }
+    }
+
+    if (genreCounts.isEmpty) return null;
+    var mostFrequent = genreCounts.entries.reduce((a, b) => a.value > b.value ? a : b);
+
+    return mostFrequent.key;
+  }
+
 }
