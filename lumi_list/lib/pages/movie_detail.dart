@@ -258,46 +258,57 @@ void _showRatingDialog() {
                   const SizedBox(height: 20),
 
                   /*-----------------summary section with expandable text-------*/
-                  const Text( "Summary",style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),),
+                  const Text( "Summary",style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white), ),
                   const SizedBox(height: 8),
-                  
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _isExpanded = !_isExpanded;
-                      });
-                    },
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _plot ?? "No summary available.",
-                          maxLines: _isExpanded ? null : 4,
-                          overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                          style: const TextStyle(color: Color.fromARGB(255, 215, 214, 214), fontSize: 16),
-                        ),
-                        
-                        
-                        Align(
-                          alignment: Alignment.centerRight, 
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              _isExpanded ? "Fold" : "More...",
-                              style: const TextStyle(
-                                color: Colors.deepPurpleAccent,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final span = TextSpan(
+                        text: _plot ?? "No summary available.",
+                        style: const TextStyle(fontSize: 16),
+                      );
+                      final tp = TextPainter(
+                        text: span,
+                        maxLines: 3, // if more than 3 lines, show "More..." button
+                        textDirection: TextDirection.ltr,
+                      );
+                    tp.layout(maxWidth: constraints.maxWidth);
+                    final bool isExceeding = tp.didExceedMaxLines;
 
+                      return InkWell(
+                        onTap: isExceeding 
+                            ? () => setState(() => _isExpanded = !_isExpanded) 
+                            : null,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _plot ?? "No summary available.",
+                              maxLines: _isExpanded ? null : 3,
+                              overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                              style: const TextStyle(color: Color.fromARGB(255, 215, 214, 214), fontSize: 16),
+                            ),
+                            if (isExceeding)
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 4.0),
+                                  child: Text(
+                                    _isExpanded ? "Fold" : "More...",
+                                    style: const TextStyle(
+                                      color: Colors.deepPurpleAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                   /*--- ---------------Genre Tags-------------------------*/
+                  const SizedBox(height: 20),
                   if (genreList.isNotEmpty)
                     Wrap(
                       alignment: WrapAlignment.center,

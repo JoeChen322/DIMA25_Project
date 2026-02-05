@@ -12,13 +12,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _index = 1; 
-  String? _userEmail; // received email from LoginPage
+  int _index = 1; // 默认显示 HomeContent
+  String? _userEmail;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // retrieve email from arguments
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null && args.containsKey('email')) {
       setState(() {
@@ -27,56 +26,69 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // logical body builder
+  // 页面选择逻辑保持不变
   Widget _buildBody() {
     switch (_index) {
       case 0:
         return const SearchPage();
       case 2:
-        // pass email to MePage
-        // ignore: prefer_if_null_operators
         return MyListPage(email: _userEmail);
       default:
-        return const HomeContent(); 
+        return const HomeContent();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // 关键点 1：定义响应式阈值（通常 600 是手机和 iPad/横屏的分界点）
+    final bool isWideScreen = MediaQuery.of(context).size.width > 600;
+
     return Scaffold(
       backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true, 
-      
-      appBar: _index == 2 
-    ? null  
-    : AppBar(
-        title: const Text("LumiList", style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        backgroundColor: Colors.transparent, 
-        elevation: 0,
-        foregroundColor: Colors.white,
-      ),
-
-      body: _buildBody(),
-
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: Colors.black,
-        height: 65,
-        indicatorColor: Colors.deepPurple.withOpacity(0.5),
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.search, color: Colors.white, size: 22),
-            label: "Search",
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.home, color: Colors.white, size: 22), 
-            label: "Home",
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person, color: Colors.white, size: 22), 
-            label: "Me",
+      // 只有在竖屏/手机上才显示底部导航
+      bottomNavigationBar: isWideScreen
+          ? null
+          : BottomNavigationBar(
+              currentIndex: _index,
+              onTap: (index) => setState(() => _index = index),
+              backgroundColor: Colors.black,
+              selectedItemColor: Colors.deepPurpleAccent,
+              unselectedItemColor: Colors.grey,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+                BottomNavigationBarItem(icon: Icon(Icons.person), label: "Me"),
+              ],
+            ),
+      body: Row(
+        children: [
+          // 关键点 2：如果是宽屏，在内容左侧插入侧边栏
+          if (isWideScreen)
+            NavigationRail(
+              backgroundColor: const Color(0xFF0F0F0F),
+              selectedIndex: _index,
+              onDestinationSelected: (index) => setState(() => _index = index),
+              // 标签显示模式
+              labelType: NavigationRailLabelType.all,
+              selectedIconTheme: const IconThemeData(color: Colors.deepPurpleAccent),
+              unselectedIconTheme: const IconThemeData(color: Colors.grey),
+              selectedLabelTextStyle: const TextStyle(color: Colors.deepPurpleAccent),
+              unselectedLabelTextStyle: const TextStyle(color: Colors.grey),
+              // 顶部可以放一个 Logo
+              leading: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Icon(Icons.movie_filter, color: Colors.deepPurpleAccent, size: 40),
+              ),
+              destinations: const [
+                NavigationRailDestination(icon: Icon(Icons.search), label: Text("Search")),
+                NavigationRailDestination(icon: Icon(Icons.home), label: Text("Home")),
+                NavigationRailDestination(icon: Icon(Icons.person), label: Text("Me")),
+              ],
+            ),
+          
+          // 关键点 3：使用 Expanded 让页面内容占据剩余的所有空间
+          Expanded(
+            child: _buildBody(),
           ),
         ],
       ),
@@ -149,10 +161,68 @@ class _HomeContentState extends State<HomeContent> {
 
     final topMovie = _trendingMovies[0];
     final String posterUrl = "https://image.tmdb.org/t/p/w780${topMovie['poster_path']}";
+    //check orientation
+    final bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final double screenHeight = MediaQuery.of(context).size.height;
 
     return SingleChildScrollView(
       child: Column(
         children: [
+          if (isLandscape)
+            // ---------- Pad screen ---------
+            Container(
+              height: screenHeight * 0.6, 
+              padding: const EdgeInsets.fromLTRB(16, 60, 16, 10),
+              child: Row(
+                children: _trendingMovies.take(3).map((movie) {
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => _navigateToDetail(movie),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.5),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5))
+                          ],
+                          image: DecorationImage(
+                            image: NetworkImage(
+                                "https://image.tmdb.org/t/p/w780${movie['poster_path']}"),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                            ),
+                          ),
+                          alignment: Alignment.bottomLeft,
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            movie['title'] ?? movie['name'],
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            )
+            /*---------- Phone screen ---------*/
+          else
           GestureDetector(
             onTap: () => _navigateToDetail(topMovie),
             child: Container(
@@ -197,7 +267,7 @@ class _HomeContentState extends State<HomeContent> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount:_trendingMovies.length > 5 ? 5 : _trendingMovies.length,
+              itemCount:_trendingMovies.length > 8 ? 8 : _trendingMovies.length,
               itemBuilder: (context, index) {
                 final movie = _trendingMovies[index];
                 return GestureDetector(

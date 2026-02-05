@@ -2,6 +2,7 @@
 
  A movie marking and discovery app. Goal is to create a clean, user-friendly interface that helps users quickly evaluate films and build their own watchlist.
 ## TODO
+- make the main page adapt to landscape 
 - pull down to show the complete poster?
 - adjust search relevance
 - light and dark modes
@@ -12,6 +13,9 @@
 - Allowing users to manage a personal list of favorite movies, and gives score.
 - Generate the rank of the movie list based on some rules.
 - Based on the taste of the user, recommend users the classic movies they may like.
+## Adaptive
+- adjust the different sccreen size
+- have different widget distributions on phone and pad
 ## Repository Organization
 ### /database
 - /database/app_database : to define the database using Sqlite 

@@ -87,6 +87,7 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F), // dark background
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // purple blurred circle background
@@ -161,64 +162,63 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                   ),
                 ),           
-
-              // ---  Guess you like  ---
-             
-                const SizedBox(height: 24),
-                if (_favoriteGenre != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0), 
-                    child: Row(
-                      children: [
-                        const Text(
-                          "Guess Your Favourite Category: ",
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {
-                            String searchKey = _favoriteGenre!;
-                            if (searchKey == "Sci-Fi" || searchKey == "Science Fiction") searchKey = "Fiction";                          
-                            final categoryMovies = MovieCategoryData.categories[searchKey];
-                            if (categoryMovies != null && categoryMovies.isNotEmpty) {
-                              // choose a random movie from the category
-                              final randomMovie = (List.from(categoryMovies)..shuffle()).first;
-                              _controller.text = randomMovie['title']!;
-                            } 
-                           // else {_controller.text = _favoriteGenre!;}
-                            _search();
-                          },
-                          child: Text(
-                            _favoriteGenre!,
-                            style: const TextStyle(
-                              color: Colors.deepPurpleAccent,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline, 
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10), 
-                ],
+      
                 // -------------default view when no search has been made---------------
                 if (!_isLoading && _movies.isEmpty && _errorMessage == null)
                   Expanded(
                     child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          
+                           // ------------Guess you like------------------
+                          if (_favoriteGenre != null) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10.0), 
+                              child: Row(
+                                children: [
+                                  const Text(
+                                    "Guess Your Favourite Category: ",
+                                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () {
+                                      String searchKey = _favoriteGenre!;
+                                      if (searchKey == "Sci-Fi" || searchKey == "Science Fiction") searchKey = "Fiction";                          
+                                      final categoryMovies = MovieCategoryData.categories[searchKey];
+                                      if (categoryMovies != null && categoryMovies.isNotEmpty) {
+                                        // choose a random movie from the category
+                                        final randomMovie = (List.from(categoryMovies)..shuffle()).first;
+                                        _controller.text = randomMovie['title']!;
+                                      } 
+                                    // else {_controller.text = _favoriteGenre!;}
+                                      _search();
+                                    },
+                                    child: Text(
+                                      _favoriteGenre!,
+                                      style: const TextStyle(
+                                        color: Colors.deepPurpleAccent,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.underline, 
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: 10), 
+                        ],
                           const SizedBox(height: 40),
                           const Text("Browse Categories", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 15),
                           GridView.count(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: 2,
+                            crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,//if it is wider than 600px, show 3 columns
+                            //crossAxisCount: 2,
                             childAspectRatio: 2.5,
                             mainAxisSpacing: 12,
                             crossAxisSpacing: 12,
@@ -231,7 +231,7 @@ class _SearchPageState extends State<SearchPage> {
                               _buildCategoryCard("Romance", Colors.purpleAccent),
                             ],
                           ),
-                          
+                          const SizedBox(height: 00),
 
                         ],
                       ),
