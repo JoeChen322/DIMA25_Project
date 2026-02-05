@@ -127,7 +127,7 @@ class MovieCategoryData {
         'poster': 'https://m.media-amazon.com/images/M/MV5BNTEyZGQwODctYWJjZi00NjFmLTg3YmEtMzlhNjljOGZhMWMyXkEyXkFqcGc@._V1_SX300.jpg'
       },
     ],
-    'Crime': [
+    'Drama': [
       {
         'id': 'tt0068646',
         'title': 'The Godfather',

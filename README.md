@@ -5,12 +5,13 @@
 - pull down to show the complete poster?
 - adjust search relevance
 - light and dark modes
-## **Main Functions：**
-- Show the trending movies now
+## Main Functions：
+- Show the recently popular movies
 - Searching for movies by title (support fuzzy search), and display the detailed information such as poster, synopsis, cast, director and release year
-- Retrieving external ratings (e.g., IMDb, Rotten Tomatoes, Metascore) using publicly available APIs
+- Retrieving external ratings (e.g. IMDb, Rotten Tomatoes, Metascore) using publicly available APIs
 - Allowing users to manage a personal list of favorite movies, and gives score.
 - Generate the rank of the movie list based on some rules.
+- Based on the taste of the user, recommend users the classic movies they may like.
 ## Repository Organization
 ### /database
 - /database/app_database : to define the database using Sqlite 
@@ -24,4 +25,3 @@
 - /pages/movie_detail : show the movie info and the actors info, support to rating and add the movie to the favorite list
 ## Improvement 
 - Support search by the actor or movie type
-- Based on the taste of the user, recommend users the movies they may like.

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../services/tmdb_api.dart'; 
 import 'movie_detail.dart';
+import 'movieCatergory.dart';
 import 'dart:ui'; 
 import 'CategoryDetail.dart';
 import '../database/favorite.dart';
@@ -162,31 +163,47 @@ class _SearchPageState extends State<SearchPage> {
                 ),           
 
               // ---  Guess you like  ---
-              
-               const SizedBox(height: 24),
-              if (_favoriteGenre != null) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  child: Row(
-                    children: [
-                      const Text(
-                        "Guess Your Fabourite Catergory: ",
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
-                      Text(
-                          _favoriteGenre!,
-                          style: const TextStyle(
-                            color: Colors.deepPurpleAccent, 
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
+             
+                const SizedBox(height: 24),
+                if (_favoriteGenre != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0), 
+                    child: Row(
+                      children: [
+                        const Text(
+                          "Guess Your Favourite Category: ",
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            String searchKey = _favoriteGenre!;
+                            if (searchKey == "Sci-Fi" || searchKey == "Science Fiction") searchKey = "Fiction";                          
+                            final categoryMovies = MovieCategoryData.categories[searchKey];
+                            if (categoryMovies != null && categoryMovies.isNotEmpty) {
+                              // choose a random movie from the category
+                              final randomMovie = (List.from(categoryMovies)..shuffle()).first;
+                              _controller.text = randomMovie['title']!;
+                            } 
+                           // else {_controller.text = _favoriteGenre!;}
+                            _search();
+                          },
+                          child: Text(
+                            _favoriteGenre!,
+                            style: const TextStyle(
+                              color: Colors.deepPurpleAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline, 
+                            ),
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-              ],
-                // default view when no search has been made
+                  const SizedBox(height: 10), 
+                ],
+                // -------------default view when no search has been made---------------
                 if (!_isLoading && _movies.isEmpty && _errorMessage == null)
                   Expanded(
                     child: SingleChildScrollView(
@@ -210,7 +227,7 @@ class _SearchPageState extends State<SearchPage> {
                               _buildCategoryCard("Fiction", Colors.blueAccent),
                               _buildCategoryCard("Horror", Colors.redAccent),
                               _buildCategoryCard("Comedy", Colors.greenAccent),
-                              _buildCategoryCard("Crime",  Colors.yellowAccent),
+                              _buildCategoryCard("Drama",  Colors.yellowAccent),
                               _buildCategoryCard("Romance", Colors.purpleAccent),
                             ],
                           ),
