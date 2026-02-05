@@ -12,7 +12,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _index = 1; // 默认显示 HomeContent
+  int _index = 1; 
   String? _userEmail;
 
   @override
@@ -26,7 +26,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // 页面选择逻辑保持不变
+
   Widget _buildBody() {
     switch (_index) {
       case 0:
@@ -40,12 +40,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // 关键点 1：定义响应式阈值（通常 600 是手机和 iPad/横屏的分界点）
+    /*-------------phone mode-------------*/
     final bool isWideScreen = MediaQuery.of(context).size.width > 600;
 
     return Scaffold(
       backgroundColor: Colors.black,
-      // 只有在竖屏/手机上才显示底部导航
       bottomNavigationBar: isWideScreen
           ? null
           : BottomNavigationBar(
@@ -62,19 +61,18 @@ class _HomePageState extends State<HomePage> {
             ),
       body: Row(
         children: [
-          // 关键点 2：如果是宽屏，在内容左侧插入侧边栏
+          /*-------------pad mode-------------*/
           if (isWideScreen)
             NavigationRail(
               backgroundColor: const Color(0xFF0F0F0F),
               selectedIndex: _index,
               onDestinationSelected: (index) => setState(() => _index = index),
-              // 标签显示模式
+              
               labelType: NavigationRailLabelType.all,
               selectedIconTheme: const IconThemeData(color: Colors.deepPurpleAccent),
               unselectedIconTheme: const IconThemeData(color: Colors.grey),
               selectedLabelTextStyle: const TextStyle(color: Colors.deepPurpleAccent),
               unselectedLabelTextStyle: const TextStyle(color: Colors.grey),
-              // 顶部可以放一个 Logo
               leading: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
                 child: Icon(Icons.movie_filter, color: Colors.deepPurpleAccent, size: 40),
@@ -86,7 +84,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           
-          // 关键点 3：使用 Expanded 让页面内容占据剩余的所有空间
           Expanded(
             child: _buildBody(),
           ),
