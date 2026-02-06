@@ -41,7 +41,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     /*-------------phone mode-------------*/
-    final bool isWideScreen = MediaQuery.of(context).size.width > 600;
+    final bool isWideScreen = MediaQuery.of(context).orientation == Orientation.landscape;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -64,10 +64,11 @@ class _HomePageState extends State<HomePage> {
           /*-------------pad mode-------------*/
           if (isWideScreen)
             NavigationRail(
+              
               backgroundColor: const Color(0xFF0F0F0F),
               selectedIndex: _index,
               onDestinationSelected: (index) => setState(() => _index = index),
-              
+              groupAlignment: 0.0,
               labelType: NavigationRailLabelType.all,
               selectedIconTheme: const IconThemeData(color: Colors.deepPurpleAccent),
               unselectedIconTheme: const IconThemeData(color: Colors.grey),

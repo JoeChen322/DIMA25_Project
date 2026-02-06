@@ -182,193 +182,116 @@ void _showRatingDialog() {
 }
 
   @override
-  Widget build(BuildContext context) {
-    // load ratings from several platforms
-    String imdb = "No Info";
-    String rotten = "No Info";
-    String meta = "No Info";
+Widget build(BuildContext context) {
+  // 1. Detect orientation
+  final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+  final screenWidth = MediaQuery.of(context).size.width;
 
-    /*---------split genre string into list----------  */  
-    List<String> genreList = _genre.split(',').map((e) => e.trim()).toList();
-    genreList.removeWhere((element) => element == "No Info" || element.isEmpty);
-   /*-----------------------------------------------*/
-    final ratings = fullOmdbData?['Ratings'] as List?;
-    if (ratings != null) {
-      for (var r in ratings) {
-        if (r['Source'] == 'Internet Movie Database') imdb = r['Value'];
-        if (r['Source'] == 'Rotten Tomatoes') rotten = r['Value'];
-        if (r['Source'] == 'Metacritic') meta = r['Value'];
-      }
-    } else {
-      imdb = widget.movie['imdbRating'] ?? "No Info";
+  // Rating logic (remains unchanged)
+  String imdb = "No Info";
+  String rotten = "No Info";
+  String meta = "No Info";
+  List<String> genreList = _genre.split(',').map((e) => e.trim()).toList();
+  genreList.removeWhere((element) => element == "No Info" || element.isEmpty);
+  final ratings = fullOmdbData?['Ratings'] as List?;
+  if (ratings != null) {
+    for (var r in ratings) {
+      if (r['Source'] == 'Internet Movie Database') imdb = r['Value'];
+      if (r['Source'] == 'Rotten Tomatoes') rotten = r['Value'];
+      if (r['Source'] == 'Metacritic') meta = r['Value'];
     }
+  } else {
+    imdb = widget.movie['imdbRating'] ?? "No Info";
+  }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  // Define the main column content to reuse it in both layouts
+  Widget detailContent = Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("${widget.movie['Title']} ($_year)", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text("——$_director", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+        const SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Stack(
-              children: [
-                Image.network(
-                  widget.movie['Poster'] ?? "",
-                  width: double.infinity, height: 530, fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Container(height: 530, color: Colors.grey[900], child: const Icon(Icons.broken_image, size: 80, color: Colors.white)),
-                ),
-                Positioned(top: 80, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            MovieActionButton(icon: isFavorite ? Icons.favorite : Icons.favorite_border, iconColor: Colors.red, label: isFavorite ? "Saved" : "My List", onTap: _toggleFavorite),
+            MovieActionButton(icon: Icons.star, iconColor: userRating != null ? Colors.amber : Colors.grey, label: userRating != null ? "My: $userRating" : "Rate", onTap: _showRatingDialog),
+            MovieActionButton(icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined, iconColor: Colors.blueAccent, label: isSeeLater ? "In Later" : "Later", onTap: _toggleSeeLater),
+          ],
+        ),
+        const SizedBox(height: 20),
+        const Text("Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+        const SizedBox(height: 8),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final span = TextSpan(text: _plot ?? "No summary available.", style: const TextStyle(fontSize: 16));
+            final tp = TextPainter(text: span, maxLines: 3, textDirection: TextDirection.ltr);
+            tp.layout(maxWidth: constraints.maxWidth);
+            final bool isExceeding = tp.didExceedMaxLines;
+            return InkWell(
+              onTap: isExceeding ? () => setState(() => _isExpanded = !_isExpanded) : null,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("${widget.movie['Title']} ($_year)", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-                  Text("——$_director", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                  
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      MovieActionButton(
-                        icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-                        iconColor: Colors.red,
-                        label: isFavorite ? "Saved" : "My List",
-                        onTap: _toggleFavorite,
-                      ),
-                      // star rating buttons
-                      MovieActionButton(
-                        icon: Icons.star,
-                        iconColor: userRating != null ? Colors.amber : Colors.grey,
-                        label: userRating != null ? "My: $userRating" : "Rate",
-                        onTap: _showRatingDialog,
-                      ),
-                      //add to watch later list
-                      MovieActionButton(
-                        icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined,
-                        iconColor: Colors.blueAccent,
-                        label: isSeeLater ? "In Later" : "Later",
-                        onTap: _toggleSeeLater,
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 20),
-
-                  /*-----------------summary section with expandable text-------*/
-                  const Text( "Summary",style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white), ),
-                  const SizedBox(height: 8),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final span = TextSpan(
-                        text: _plot ?? "No summary available.",
-                        style: const TextStyle(fontSize: 16),
-                      );
-                      final tp = TextPainter(
-                        text: span,
-                        maxLines: 3, // if more than 3 lines, show "More..." button
-                        textDirection: TextDirection.ltr,
-                      );
-                    tp.layout(maxWidth: constraints.maxWidth);
-                    final bool isExceeding = tp.didExceedMaxLines;
-
-                      return InkWell(
-                        onTap: isExceeding 
-                            ? () => setState(() => _isExpanded = !_isExpanded) 
-                            : null,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _plot ?? "No summary available.",
-                              maxLines: _isExpanded ? null : 3,
-                              overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                              style: const TextStyle(color: Color.fromARGB(255, 215, 214, 214), fontSize: 16),
-                            ),
-                            if (isExceeding)
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 4.0),
-                                  child: Text(
-                                    _isExpanded ? "Fold" : "More...",
-                                    style: const TextStyle(
-                                      color: Colors.deepPurpleAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  /*--- ---------------Genre Tags-------------------------*/
-                  const SizedBox(height: 20),
-                  if (genreList.isNotEmpty)
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 8.0, 
-                      runSpacing: 4.0, 
-                      children: genreList.map((genre) => Chip(
-                        label: Text(
-                          genre,
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                        backgroundColor: const Color.fromARGB(255, 87, 33, 235).withOpacity(0.3),
-                        side: BorderSide(color: const Color.fromARGB(255, 95, 47, 225).withOpacity(0.5)),
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                        visualDensity: VisualDensity.compact,
-                      )).toList(),
-                    ),
-                  
-                  if (genreList.isNotEmpty) const SizedBox(height: 20),
-                  
-                /*-------------------------------cast section---------------------------------*/
-                
-                  //Text(fullOmdbData?['Plot'] ?? widget.movie['Plot'] ?? "No summary available.", style: const TextStyle(color: Colors.grey, fontSize: 16)),
-                  const SizedBox(height: 20),
-                  const Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const SizedBox(height: 10),
-                  isLoadingCast ? const Center(child: CircularProgressIndicator()) : CastStrip(cast: cast),
-                  
-                  /*-------------------------Ratings from --------------------------------*/
-                  const SizedBox(height: 30),
-                  Container(
-                    width: double.infinity, 
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-
-
-
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("Ratings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                        const SizedBox(height: 12),
-                        _buildRatingLine("IMDb", imdb),
-                        _buildRatingLine("Rotten Tomatoes", rotten),
-                        _buildRatingLine("Metascore", meta),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 50),
+                  Text(_plot ?? "No summary available.", maxLines: _isExpanded ? null : 3, overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis, style: const TextStyle(color: Color.fromARGB(255, 215, 214, 214), fontSize: 16)),
+                  if (isExceeding) Align(alignment: Alignment.centerRight, child: Padding(padding: const EdgeInsets.only(top: 4.0), child: Text(_isExpanded ? "Fold" : "More...", style: const TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold, fontSize: 14)))),
                 ],
               ),
-            ),
-          ],
+            );
+          },
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 20),
+        if (genreList.isNotEmpty) Wrap(alignment: WrapAlignment.center, spacing: 8.0, runSpacing: 4.0, children: genreList.map((genre) => Chip(label: Text(genre, style: const TextStyle(color: Colors.white, fontSize: 12)), backgroundColor: const Color.fromARGB(255, 87, 33, 235).withOpacity(0.3), side: BorderSide(color: const Color.fromARGB(255, 95, 47, 225).withOpacity(0.5)), padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0), visualDensity: VisualDensity.compact)).toList()),
+        if (genreList.isNotEmpty) const SizedBox(height: 20),
+        const Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+        const SizedBox(height: 10),
+        isLoadingCast ? const Center(child: CircularProgressIndicator()) : CastStrip(cast: cast),
+        const SizedBox(height: 30),
+        Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(12)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text("Ratings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)), const SizedBox(height: 12), _buildRatingLine("IMDb", imdb), _buildRatingLine("Rotten Tomatoes", rotten), _buildRatingLine("Metascore", meta)])),
+        const SizedBox(height: 50),
+      ],
+    ),
+  );
 
+  return Scaffold(
+    backgroundColor: Colors.black,
+    body: isLandscape
+        ? Row(
+            children: [
+              // Left side: Fixed Poster
+              SizedBox(
+                width: screenWidth * 0.4, // 40% of screen width
+                height: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(widget.movie['Poster'] ?? "", fit: BoxFit.cover),
+                    Positioned(top: 50, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
+                  ],
+                ),
+              ),
+              // Right side: Scrollable Details
+              Expanded(child: SingleChildScrollView(child: detailContent)),
+            ],
+          )
+        : SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    Image.network(widget.movie['Poster'] ?? "", width: double.infinity, height: 530, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => Container(height: 530, color: Colors.grey[900], child: const Icon(Icons.broken_image, size: 80, color: Colors.white))),
+                    Positioned(top: 80, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
+                  ],
+                ),
+                detailContent,
+              ],
+            ),
+          ),
+  );
+}
   
   Widget _buildRatingLine(String platform, String score) {
     return Padding(
