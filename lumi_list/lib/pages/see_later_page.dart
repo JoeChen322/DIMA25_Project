@@ -4,15 +4,11 @@ to display the list of movies marked to watch later */
 import 'package:flutter/material.dart';
 import 'package:lumi_list/database/app_database.dart';
 import 'movie_detail.dart';
+import '../database/seelater.dart';
 
 class SeeLaterPage extends StatelessWidget {
   const SeeLaterPage({super.key});
 
-  
-  Future<List<Map<String, dynamic>>> _getSeeLaterMovies() async {
-    final db = await AppDatabase.database;
-    return await db.query('see_later');
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +24,7 @@ class SeeLaterPage extends StatelessWidget {
         ),
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _getSeeLaterMovies(),
+        future: SeeLaterDao.getSeeLaterMovies(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

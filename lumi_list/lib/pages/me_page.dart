@@ -70,7 +70,7 @@ class MyListPage extends StatelessWidget {
                     crossAxisSpacing: 16,
                     childAspectRatio: 1.3,
                     children: [
-                      // 1. Favorites
+                      // ---------------Favorites--------------------
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -81,13 +81,13 @@ class MyListPage extends StatelessWidget {
                         child: _buildDarkItem(context, Colors.amber, "Favorites", Icons.star_rounded),
                       ),
                       
-                      // 2. Watch Later (修复了这里的参数和嵌套错误)
+                      // ----------Watch Later ---------------
                       GestureDetector(
                         onTap: () => Navigator.pushNamed(context, '/seelater'),
                         child: _buildDarkItem(context, Colors.redAccent, "Watch Later", Icons.access_time_filled_rounded),
                       ),
                       
-                      // 3. IMDb Classics
+                      //------------- IMDb Classics----------------
                       GestureDetector(
                         onTap: () {
                            Navigator.push(
@@ -98,7 +98,7 @@ class MyListPage extends StatelessWidget {
                        child: _buildDarkItem(context, Colors.blueAccent, "IMDb Classics", Icons.movie_filter_rounded),
                       ),
 
-                      // 4. My Profile
+                      // -----------------My Profile------------
                       GestureDetector(
                         onTap: () {
                           Navigator.pushNamed(

@@ -19,7 +19,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         
 
@@ -38,36 +38,42 @@ class AppDatabase {
         // Favorite movies table
         await db.execute('''
           CREATE TABLE favorites (
-            imdb_id TEXT PRIMARY KEY,
+            user_id INTEGER,
+            imdb_id TEXT,
             title TEXT,
             poster STRING,
             genre TEXT,
-            rating INTEGER
+            rating INTEGER,
+            PRIMARY KEY (user_id, imdb_id)
           )
         ''');
         // Personal ratings table
         await db.execute('''
           CREATE TABLE personal_ratings (
-            imdb_id TEXT PRIMARY KEY,
+            user_id INTEGER,
+            imdb_id TEXT,
             title TEXT,
             rating INTEGER,
-            timestamp INTEGER
+            timestamp INTEGER,
+            PRIMARY KEY (user_id, imdb_id)
           )
         ''');
         // See Later table
           await db.execute('''
             CREATE TABLE see_later (
-              imdb_id TEXT PRIMARY KEY,
+              user_id INTEGER,
+              imdb_id TEXT,
               title TEXT,
-              poster TEXT
+              poster TEXT,
+              PRIMARY KEY (user_id, imdb_id)
             )
           ''');
       },
     onUpgrade: (db, oldVersion, newVersion) async {
-    if (oldVersion < 6) {
-    await db.execute('CREATE TABLE IF NOT EXISTS personal_ratings (imdb_id TEXT PRIMARY KEY, title TEXT, rating INTEGER, timestamp INTEGER)');
-    await db.execute('CREATE TABLE IF NOT EXISTS see_later (imdb_id TEXT PRIMARY KEY, title TEXT, poster TEXT)');
-    await db.execute('CREATE TABLE IF NOT EXISTS favorites (imdb_id TEXT PRIMARY KEY, title TEXT, poster TEXT, genre TEXT, rating INTEGER)');
+    if (oldVersion < 7) {
+    await db.execute('CREATE TABLE IF NOT EXISTS personal_ratings (user_id INTEGER, imdb_id TEXT, title TEXT, rating INTEGER, timestamp INTEGER, PRIMARY KEY (user_id, imdb_id))');
+    await db.execute('CREATE TABLE IF NOT EXISTS see_later (user_id INTEGER, imdb_id TEXT, title TEXT, poster TEXT, PRIMARY KEY (user_id, imdb_id))');
+    await db.execute('CREATE TABLE IF NOT EXISTS favorites (user_id INTEGER, imdb_id TEXT, title TEXT, poster TEXT, genre TEXT, rating INTEGER, PRIMARY KEY (user_id, imdb_id))');
         }
 },
     );
