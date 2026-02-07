@@ -22,45 +22,47 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_email == null) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null && args['email'] != null) {
-        _email = args['email'];
-        _loadDataFromDb();
-      } else {
-        setState(() => _isLoading = false);
-      }
-    }
+    _loadDataFromDb();
   }
 
   // data from database
-  Future<void> _loadDataFromDb() async {
-    if (_email == null) return;
-    
-    try {
-      final db = await AppDatabase.database;
-      final List<Map<String, dynamic>> maps = await db.query(
-        'users',
-        where: 'email = ?',
-        whereArgs: [_email],
-      );
+// profile_page.dart
 
-      if (maps.isNotEmpty) {
-        if (mounted) {
-          setState(() {
-            _name = maps.first['username'] ?? "User Name";
-            _bio = maps.first['bio'] ?? "Write something about yourself...";
-            _phone = maps.first['phone'] ?? "N/A";
-            _avatarPath = maps.first['avatar'];
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint("Error loading profile: $e");
-      if (mounted) setState(() => _isLoading = false);
+Future<void> _loadDataFromDb() async {
+  try {
+    final db = await AppDatabase.database;
+    int? currentId = UserDao.getCurrentUserId();
+    
+    if (currentId == null) {
+      print("Error: No user logged in (ID is null)");
+      setState(() => _isLoading = false);
+      return;
     }
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'users',
+      where: 'id = ?',
+      whereArgs: [currentId],
+    );
+
+    if (maps.isNotEmpty) {
+      final userData = maps.first;
+      setState(() {
+        _name = userData['username'] ?? "Movie Fan";
+        _bio = userData['bio'] ?? "LumiList User";
+        _phone = userData['phone'] ?? "N/A";
+        _avatarPath = userData['avatar'] == 'NA' ? null : userData['avatar'];
+        _email = userData['email']; 
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = false);
+    }
+  } catch (e) {
+    print("Database Error: $e");
+    setState(() => _isLoading = false);
   }
+}
 
   Future<void> _navigateToEdit() async {
     final result = await Navigator.pushNamed(
@@ -77,7 +79,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (result != null && result is Map<String, dynamic>) {
       await UserDao.updateUser(
-      email: _email!,
+      id: UserDao.getCurrentUserId()!,
       username: result['name'],
       bio: result['bio'],
       phone: result['phone'],

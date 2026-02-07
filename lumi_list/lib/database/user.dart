@@ -36,6 +36,7 @@ class UserDao {
     );
     //print("【Register Success】User ID set to: $id");
   }
+  
   // login
   static Future<Map<String, dynamic>?> login(String email, String password) async {
     final db = await AppDatabase.database;
@@ -55,7 +56,7 @@ class UserDao {
 
   // update user profile
   static Future<int> updateUser({
-    required String email,
+    required int id,
     required String username,
     required String bio,
     required String phone,
@@ -70,8 +71,8 @@ class UserDao {
         'phone': phone,
         'avatar': avatar,
       },
-      where: 'email = ?',
-      whereArgs: [email],
+      where: 'id = ?',
+      whereArgs: [getCurrentUserId()],
     );
   }
 }
