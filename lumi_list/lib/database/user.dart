@@ -1,3 +1,7 @@
+/*
+  UserDao class for handling user-related database operations.
+  This includes registration, login, and profile updates.
+*/
 import 'package:sqflite/sqflite.dart';
 import 'app_database.dart';
 
@@ -10,21 +14,30 @@ class UserDao {
 
   
   static int? getCurrentUserId() {
-    return _currentUserId;
+    return _currentUserId; 
   }
 
   // register
   static Future<int> registerUser(String email, String password, String username) async {
-    final db = await AppDatabase.database;
-    return await db.insert('users', {
-      'email': email,
-      'password': password,
-      'username': username,
-    });
+    final db = await AppDatabase.database; 
+    
+    return await db.insert(
+      'users', 
+      {
+        'id': null, // Let the database auto-increment the ID
+        'email': email,
+        'password': password,
+        'username': username,
+        'bio': 'NA',      
+        'phone': 'NA',
+        'avatar': 'NA',
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace, 
+    );
+    //print("【Register Success】User ID set to: $id");
   }
-
   // login
-  static Future<int?> login(String email, String password) async {
+  static Future<Map<String, dynamic>?> login(String email, String password) async {
     final db = await AppDatabase.database;
     final List<Map<String, dynamic>> maps = await db.query(
       'users',
@@ -35,8 +48,30 @@ class UserDao {
     if (maps.isNotEmpty) { 
       int id = maps.first['id'] as int;
       setCurrentUser(id); 
-      return id;
+      return maps.first;  
     }
     return null;
+  }
+
+  // update user profile
+  static Future<int> updateUser({
+    required String email,
+    required String username,
+    required String bio,
+    required String phone,
+    String? avatar,
+  }) async {
+    final db = await AppDatabase.database;
+    return await db.update(
+      'users',
+      {
+        'username': username,
+        'bio': bio,
+        'phone': phone,
+        'avatar': avatar,
+      },
+      where: 'email = ?',
+      whereArgs: [email],
+    );
   }
 }

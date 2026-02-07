@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lumi_list/database/app_database.dart';
-
+import 'package:lumi_list/database/user.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -76,26 +76,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
 
     if (result != null && result is Map<String, dynamic>) {
-      await _updateUserInDatabase(result);
+      await UserDao.updateUser(
+      email: _email!,
+      username: result['name'],
+      bio: result['bio'],
+      phone: result['phone'],
+      avatar: result['avatar'],
+    );
       await _loadDataFromDb(); 
     }
   }
 
-  Future<void> _updateUserInDatabase(Map<String, dynamic> data) async {
-    if (_email == null) return;
-    final db = await AppDatabase.database;
-    await db.update(
-      'users',
-      {
-        'username': data['name'],
-        'bio': data['bio'],
-        'phone': data['phone'],
-        'avatar': data['avatar'],
-      },
-      where: 'email = ?',
-      whereArgs: [_email],
-    );
-  }
+  
 
   @override
   Widget build(BuildContext context) {

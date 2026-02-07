@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lumi_list/database/app_database.dart'; 
+import'package:lumi_list/database/user.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -119,7 +120,7 @@ class _SignupPageState extends State<SignupPage> {
                         child: ElevatedButton(
                           // Disable button while loading
                           onPressed: _isLoading ? null : () async {
-                            // --- 1. Validation Logic ---
+                            // ---  Validation Logic ---
                             if (_emailController.text.isEmpty || 
                                 _passwordController.text.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -140,7 +141,7 @@ class _SignupPageState extends State<SignupPage> {
                                 return;
                             }
 
-                            // --- 2. Database Insertion Logic ---
+                            // ---  Database Insertion Logic ---
                             setState(() => _isLoading = true);
 
                             try {
@@ -151,11 +152,11 @@ class _SignupPageState extends State<SignupPage> {
                               String defaultUsername = _emailController.text.split('@')[0];
 
                               // Insert into 'users' table
-                              await db.insert('users', {
-                                'email': _emailController.text,
-                                'password': _passwordController.text, // In real apps, hash this!
-                                'username': defaultUsername,
-                              });
+                              await UserDao.registerUser(
+                              _emailController.text, 
+                              _passwordController.text, 
+                              defaultUsername
+                            );
 
                               if (!mounted) return;
 

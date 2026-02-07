@@ -71,6 +71,7 @@ class AppDatabase {
       },
     onUpgrade: (db, oldVersion, newVersion) async {
     if (oldVersion < 7) {
+    await db.execute('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, password TEXT, username TEXT, bio TEXT, phone TEXT, avatar TEXT)');
     await db.execute('CREATE TABLE IF NOT EXISTS personal_ratings (user_id INTEGER, imdb_id TEXT, title TEXT, rating INTEGER, timestamp INTEGER, PRIMARY KEY (user_id, imdb_id))');
     await db.execute('CREATE TABLE IF NOT EXISTS see_later (user_id INTEGER, imdb_id TEXT, title TEXT, poster TEXT, PRIMARY KEY (user_id, imdb_id))');
     await db.execute('CREATE TABLE IF NOT EXISTS favorites (user_id INTEGER, imdb_id TEXT, title TEXT, poster TEXT, genre TEXT, rating INTEGER, PRIMARY KEY (user_id, imdb_id))');

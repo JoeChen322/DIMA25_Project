@@ -56,8 +56,9 @@ class FavoriteDao {
   }
 
   // read all favorites
-  static Future<List<Map<String, dynamic>>> getAllFavorites([int? userId]) async {
+  static Future<List<Map<String, dynamic>>> getAllFavorites() async {
     final db = await AppDatabase.database;
+    final userId = UserDao.getCurrentUserId();
     if (userId == null) {
       return db.query('favorites');
     } else {
@@ -69,7 +70,7 @@ class FavoriteDao {
      final userId = UserDao.getCurrentUserId();
     if (userId == null) throw Exception("Please login first");
     
-    final favorites = await getAllFavorites(userId);
+    final favorites = await getAllFavorites();
     if (favorites.isEmpty) return null;
     Map<String, int> genreCounts = {};
 

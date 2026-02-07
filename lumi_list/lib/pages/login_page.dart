@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import '../database/user.dart';
 //database
 import 'package:lumi_list/database/app_database.dart';
 
@@ -22,73 +22,43 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
 
   Future<void> _handleLogin() async {
-    // 1. Dismiss keyboard
-    FocusScope.of(context).unfocus();
+  FocusScope.of(context).unfocus();
 
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill in all fields"), backgroundColor: Colors.redAccent),
-      );
-      return; 
-    }
-
-    setState(() => _isLoading = true); // show loading indicator
-
-    try {
-      // 2. Get database instance
-      // singleton you wrote in app_database.dart.
-      final db = await AppDatabase.database;
-
-      // 3. Query the users table
-      // Search the users table for rows where both the email and password match.
-      List<Map> result = await db.query(
-        'users',
-        where: 'email = ? AND password = ?',
-        whereArgs: [_emailController.text, _passwordController.text],
-      );
-
-      // Simulate network delay for better UX
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      if (!mounted) return; // safety check
-
-      // 4. Handle query result
-      if (result.isNotEmpty) {
-        var user = result.first; // Get the first matching data
-
-        Navigator.pushReplacementNamed(
-          context, 
-          '/', 
-          arguments: {
-            // Use the real username stored in the database.
-            'name': user['username'], 
-            'bio': user['bio'] ?? 'Write something about yourself...',
-            'phone': user['phone'] ?? '+39 123 456 7890',
-            'avatar': user['avatar'], 
-            'email': _emailController.text, // Pass email for future use
-          }
-        );
-      } else {
-        // Invalid credentials
-        setState(() => _isLoading = false); 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Invalid email or password"), 
-            backgroundColor: Colors.redAccent
-          )
-        );
-      }
-    } catch (e) {
-      // Database error
-      setState(() => _isLoading = false);
-      print("Database Error: $e");
-    }
+  if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Please fill in all fields")),
+    );
+    return;
   }
+
+  setState(() => _isLoading = true);
+
+  try {
+    final user = await UserDao.login(_emailController.text, _passwordController.text);
+
+    if (user != null) {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/'); 
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email or Password incorrect")),
+      );
+    }
+  } catch (e) {
+    print("Error: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Database Error: $e")),
+    );
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
+  }
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), // Light grey background
+      backgroundColor: const Color(0xFFF5F5F5), 
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -101,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
                 height: 80,
                 decoration: BoxDecoration(
                   color: Colors.black, 
-                  borderRadius: BorderRadius.circular(20), // Rounded corners
+                  borderRadius: BorderRadius.circular(20), 
                   // shadow effect
                   boxShadow: [
                     BoxShadow(
@@ -287,13 +257,6 @@ class _LoginPageState extends State<LoginPage> {
                             _passwordController.text = result['password'];
                           });
                           
-                          // show success snackbar
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("Info filled! Please click Login."),
-                              backgroundColor: Colors.deepPurple,
-                            )
-                          );
                         }
                       },
                     child: Text(
