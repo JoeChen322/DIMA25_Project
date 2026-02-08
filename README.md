@@ -1,31 +1,76 @@
-# **LumiList**
+# 🎬 LumiList
 
- A movie marking and discovery app. Goal is to create a clean, user-friendly interface that helps users quickly evaluate films and build their own watchlist.
-## TODO
-- make the main page adapt to landscape 
-- pull down to show the complete poster?
-- adjust search relevance
-- light and dark modes
-## Main Functions：
-- Show the recently popular movies
-- Searching for movies by title (support fuzzy search), and display the detailed information such as poster, synopsis, cast, director and release year
-- Retrieving external ratings (e.g. IMDb, Rotten Tomatoes, Metascore) using publicly available APIs
-- Allowing users to manage a personal list of favorite movies, and gives score.
-- Generate the rank of the movie list based on some rules.
-- Based on the taste of the user, recommend users the classic movies they may like.
-## Adaptive
-- adjust the different sccreen size
-- have different widget distributions on phone and pad
-## Repository Organization
-### /database
-- /database/app_database : to define the database using Sqlite 
-- /database/favorite :  store the movies which users click the ❤ button to the favorite movie list
-- /database/personal rating:  store the movies which users give a personal score
-- /database/see later :  store the movies which users click the Later button to see later list
-### /widgets
--  define the format style
-### /pages
-- /pages/search_page: using OMDB API (in /lib/service),  could search movie by its title, support fuzzy search (to do :return order by the similarity)
-- /pages/movie_detail : show the movie info and the actors info, support to rating and add the movie to the favorite list
-## Improvement 
-- Support search by the actor or movie type
+LumiList is a modern, cross-platform movie marking and discovery application built with Flutter. It provides a clean, user-friendly interface to help cinephiles quickly evaluate films, track their viewing history, and build personalized watchlists.
+
+[![Flutter](https://img.shields.io/badge/Flutter-%3E%3D3.3.0-blue.svg)](https://flutter.dev)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-green.svg)](#)
+
+---
+
+## ✨ Key Features
+
+* **Real-time Discovery**: Explore and stay updated with the most popular movies currently trending.
+* **Intelligent Search**: Find movies by title using fuzzy search logic, providing detailed info including posters, synopses, cast, and directors.
+* **External Ratings Integration**: Instantly view ratings from authoritative sources like **IMDb**, **Rotten Tomatoes**, and **Metascore** via public APIs.
+* **Personal Collection Management**: 
+    * **Favorites**: Heart your top picks to save them to your personal database.
+    * **Watchlist**: Save movies to a "See Later" list with a single tap.
+    * **Personal Ratings**: Rate movies you've watched to keep a record of your personal taste.
+* **Smart Recommendations**: Get suggestions for classic movies tailored to your specific taste.
+* **Adaptive UI**: Optimized layouts for both mobile phones and tablets, ensuring a seamless experience across different screen sizes.
+
+---
+
+## 📂 Repository Organization
+
+The project follows a modular structure to separate data logic from the user interface:
+
+### `/database`
+Defines the local data persistence layer using **SQLite**:
+* **`app_database`**: Core database configuration and initialization.
+* **`favorite`**: Manages movies marked with the ❤ button.
+* **`personal_rating`**: Stores movies with user-assigned scores.
+* **`see_later`**: Manages the "Watch Later" queue.
+
+### `/pages`
+Contains the primary application screens and business logic:
+* **`search_page`**: Integrated with the **OMDB API** to support title-based fuzzy search.
+* **`movie_detail`**: Displays comprehensive movie metadata and cast info; allows users to rate or add movies to favorites.
+
+### `/widgets`
+* Contains reusable components and defines the global format styles for the application.
+
+---
+
+## 🛠️ Technical Stack
+
+* **Framework**: Flutter (SDK 3.3.0+)
+* **State Management**: `provider`
+* **Networking**: `dio` for API interactions
+* **Database**: `sqflite` for local data persistence
+* **Assets**: Custom icons and launcher configurations for Android/iOS
+
+---
+
+## 🚀 Getting Started
+
+1.  **Install dependencies**:
+    ```bash
+    flutter pub get
+    ```
+2.  **Run the application**:
+    ```bash
+    flutter run
+    ```
+
+---
+
+## 📝 Roadmap (TODO)
+
+- [ ] Support searching by actors or movie genres.
+- [ ] Implement Light and Dark mode switching.
+- [ ] Adaptive landscape mode for the main page.
+- [ ] Enhanced search relevance sorting.
+
+---
+*Created for the DIMA25 Project.*
