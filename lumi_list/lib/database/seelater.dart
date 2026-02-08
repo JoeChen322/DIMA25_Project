@@ -59,4 +59,5 @@ class SeeLaterDao {
       whereArgs: [userId],
     );
   }
+  static Future<void> syncWithFirebase() async{}
 }

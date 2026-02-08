@@ -12,6 +12,25 @@ class FavoritePage extends StatefulWidget {
 class _FavoritePageState extends State<FavoritePage> {
   List<Map<String, dynamic>> _favoriteMovies = [];
   bool _isLoading = true;
+  bool _isSyncing = false; // sysnc state
+
+Future<void> _handleSync() async {
+  setState(() => _isSyncing = true);
+  try {
+    await FavoriteDao.syncWithFirebase();
+    await _refreshFavorites(); 
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Sync completed successfully!")),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Sync failed: $e")),
+    );
+  } finally {
+    setState(() => _isSyncing = false);
+  }
+}
+
 
   @override
   void initState() {
@@ -35,6 +54,14 @@ class _FavoritePageState extends State<FavoritePage> {
       appBar: AppBar(
         title: const Text("My Favorite List", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.transparent,
+        actions: [
+        _isSyncing 
+          ? const Center(child: Padding(padding: EdgeInsets.all(16.0), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))))
+          : IconButton(
+              icon: const Icon(Icons.sync, color: Colors.white),
+              onPressed: _handleSync,
+            ),
+      ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

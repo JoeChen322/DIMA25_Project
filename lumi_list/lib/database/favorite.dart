@@ -2,6 +2,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'app_database.dart';
 import 'user.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 class FavoriteDao {
   // add to favorites
   static Future<void> insertFavorite({
@@ -89,5 +90,5 @@ class FavoriteDao {
 
     return mostFrequent.key;
   }
-
+  static Future<void> syncWithFirebase() async{}
 }
