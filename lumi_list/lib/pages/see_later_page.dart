@@ -121,11 +121,19 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
                           style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
                         )
                       : null,
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    color: colorScheme.onSurfaceVariant,
-                    size: 16,
-                  ),
+                      //add the delete button
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                        onPressed: () async {
+                          await SeeLaterDao.deleteSeeLater(movie['imdb_id']);
+                          // use StreamBuilder，aumotically update the list after deletion
+                        },
+                      ),
+                    ],
+                  ),  
                   onTap: () {
                     Navigator.push(
                       context,

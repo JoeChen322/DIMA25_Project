@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../database/user.dart';
 
 class LoginPage extends StatefulWidget {
@@ -13,7 +12,6 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // set the primary color
   final Color _primaryColor = Colors.deepPurple;
 
   bool _isLoading = false;
@@ -31,12 +29,9 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = true);
 
-    // 修改后的 _handleLogin 方法片段
     try {
       await UserDao.login(_emailController.text, _passwordController.text);
-
       if (!mounted) return;
-      // 当跳转发生后，LoginPage 的生命周期可能已经结束
       Navigator.pushReplacementNamed(context, '/'); 
     } catch (e) {
       if (!mounted) return;
@@ -44,10 +39,20 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(content: Text("Login failed: $e")),
       );
     } finally {
-      // 关键修复：确保只有在页面仍然挂载时才刷新状态
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  // 抽离出的跳转注册逻辑
+  Future<void> _navigateToSignup() async {
+    final result = await Navigator.pushNamed(context, '/signup');
+    if (result != null && result is Map && mounted) {
+      setState(() {
+        _emailController.text = result['email'] ?? '';
+        _passwordController.text = result['password'] ?? '';
+      });
     }
   }
 
@@ -61,14 +66,13 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // --- Logo and Welcome Text ---
+              // --- Logo 区域 ---
               Container(
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
                   color: Colors.black,
                   borderRadius: BorderRadius.circular(20),
-                  // shadow effect
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.2),
@@ -77,9 +81,7 @@ class _LoginPageState extends State<LoginPage> {
                     )
                   ],
                 ),
-                // clip the image to rounded corners
                 clipBehavior: Clip.hardEdge,
-
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Image.asset(
@@ -88,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               Text(
                 "Welcome Back",
                 style: TextStyle(
@@ -106,7 +108,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 40),
 
-              // --- Email & Password Fields ---
+              // --- 登录表单卡片 ---
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Container(
@@ -141,136 +143,36 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         hintText: "••••••••",
                         icon: Icons.lock_outline,
-                        isPassword: true, // indicate it's a password field
+                        isPassword: true,
                       ),
 
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context,
-                                '/forgot_password'); // sink to ForgotPasswordPage
-                          },
-                          style: TextButton.styleFrom(
-                            foregroundColor: _primaryColor,
-                          ),
-                          child: const Text("Forgot password?",
-                              style: TextStyle(fontWeight: FontWeight.bold)),
+                          onPressed: () => Navigator.pushNamed(context, '/forgot_password'),
+                          style: TextButton.styleFrom(foregroundColor: _primaryColor),
+                          child: const Text("Forgot password?", style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ),
 
                       const SizedBox(height: 20),
 
-                      // Login Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: _isLoading
-                              ? null
-                              : _handleLogin, // disable when loading
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _primaryColor,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                      color: Colors.white, strokeWidth: 2))
-                              : const Text("Login",
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold)),
-                        ),
-                      ),
+                      // 登录按钮
+                      _buildPrimaryButton(),
+                      
+                      const SizedBox(height: 16),
+
+                      // 新账号注册按钮 (替代了原来的 Google 登录位置)
+                      _buildSecondaryButton(),
                     ],
                   ),
                 ),
               ),
-
+              
               const SizedBox(height: 40),
-
-              // --- Divider with "Or login with" ---
-              Row(
-                children: [
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text("Or login with",
-                        style: TextStyle(color: Colors.grey[500])),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // --- Social Login Buttons ---
-              SizedBox(
-                width: 400,
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    print("Google Login Tapped");
-                  },
-                  icon: const FaIcon(FontAwesomeIcons.google,
-                      color: Colors.red, size: 20),
-                  label: Text(
-                    "Continue with Google",
-                    style: TextStyle(
-                        color: Colors.grey[800],
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.grey[300]!),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    backgroundColor: Colors.white,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // Sign Up Text with tappable "Create Account"
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("New User? ", style: TextStyle(color: Colors.grey[600])),
-                  GestureDetector(
-                    onTap: () async {
-                      // sink to SignupPage
-                      final result =
-                          await Navigator.pushNamed(context, '/signup');
-
-                      // Receive data from SignupPage
-                      if (result != null && result is Map) {
-                        setState(() {
-                          // automatic fill in email
-                          _emailController.text = result['email'];
-                          // automatic fill in password
-                          _passwordController.text = result['password'];
-                        });
-                      }
-                    },
-                    child: Text(
-                      "Create Account",
-                      style: TextStyle(
-                        color: _primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // 底部的辅助信息或版本号（可选）
+              Text("© 2024 LumiList. All rights reserved.", 
+                style: TextStyle(color: Colors.grey[400], fontSize: 12)),
             ],
           ),
         ),
@@ -278,18 +180,51 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-        color: Colors.grey[700],
+  // 主登录按钮
+  Widget _buildPrimaryButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _handleLogin,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: _isLoading
+            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : const Text("Login", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     );
   }
 
-  // Minimalistic TextField
+  // 注册新账号按钮
+  Widget _buildSecondaryButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: OutlinedButton(
+        onPressed: _isLoading ? null : _navigateToSignup,
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: _primaryColor.withOpacity(0.5)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          foregroundColor: _primaryColor,
+        ),
+        child: const Text("Create New Account", 
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+    );
+  }
+
   Widget _buildMinimalTextField({
     required TextEditingController controller,
     required String hintText,
@@ -300,34 +235,22 @@ class _LoginPageState extends State<LoginPage> {
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.transparent),
       ),
       child: TextField(
         controller: controller,
-        obscureText: isPassword
-            ? _obscurePassword
-            : false, // obscure or reveal for password
+        obscureText: isPassword ? _obscurePassword : false,
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(color: Colors.grey[400]),
           prefixIcon: Icon(icon, color: Colors.grey[500]),
-          // If it's a password field, display the toggle button.
           suffixIcon: isPassword
               ? IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.grey,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                 )
               : null,
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
       ),
     );
