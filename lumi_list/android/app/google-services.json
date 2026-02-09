@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "390786832651",
+    "project_id": "lumilist-c9c1e",
+    "storage_bucket": "lumilist-c9c1e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:390786832651:android:edd48301b40b45f4db6a0e",
+        "android_client_info": {
+          "package_name": "com.example.lumi_list"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiDmj8hGV7b3OIkIuHWmnBEDVmD2CEDm0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
