@@ -236,7 +236,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           ),
           const SizedBox(height: 20),
           
-          // --- 整合后的分类部分 ---
+          // ------------- show catergory-----------
           if (genreList.isNotEmpty)
             Wrap(
               alignment: WrapAlignment.start, 
@@ -247,22 +247,26 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                 const Text(
                   "Category: ",
                   style: TextStyle(
-                    color: Color.fromARGB(179, 255, 156, 245), 
+                    color: Color.fromARGB(179, 166, 67, 188), 
                     fontSize: 14, 
                     fontWeight: FontWeight.bold
                   ),
                 ),
-                ...genreList.map((genre) => Chip(
-                  label: Text(genre, style: TextStyle(color: colorScheme.onPrimaryContainer, fontSize: 12)),
-                  backgroundColor: const Color.fromARGB(255, 87, 33, 235).withOpacity(0.3),
-                  side: BorderSide(color: const Color.fromARGB(255, 95, 47, 225).withOpacity(0.5)),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                  visualDensity: VisualDensity.compact,
+                ...genreList.map((genre) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0), 
+                  child: Text(
+                    genre,
+                    style: TextStyle(
+                      color: colorScheme.onPrimaryContainer, 
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500, 
+                    ),
+                  ),
                 )).toList(),
               ],
             ),
           if (genreList.isNotEmpty) const SizedBox(height: 20),
-          // ------------------------
+          // ------------------------cast and ratings------------------------
 
           Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
           const SizedBox(height: 10),

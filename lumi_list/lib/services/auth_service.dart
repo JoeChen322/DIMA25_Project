@@ -7,7 +7,7 @@ class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Secure storage (for your own backend token / JWT etc.)
+  // Secure storage
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static const String _keyToken = 'jwt_token';
 

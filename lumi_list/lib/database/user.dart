@@ -51,7 +51,6 @@ class UserDao {
   }
 
   /// Update user profile in Firestore.
-  /// (The `id` parameter is kept for compatibility but is ignored; Firebase uses uid.)
   static Future<void> updateUser({
     String? id, // kept for compatibility; ignore it
     required String username,

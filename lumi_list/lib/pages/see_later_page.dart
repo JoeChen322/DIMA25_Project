@@ -10,20 +10,17 @@ class SeeLaterPage extends StatefulWidget {
 }
 
 class _SeeLaterPageState extends State<SeeLaterPage> {
-  // 1. 保留 HEAD 分支引入的同步状态
-  bool _isSyncing = false;
-
-  // 模拟同步逻辑
-  Future<void> _handleSync() async {
+  
+  //bool _isSyncing = false;
+  /*Future<void> _handleSync() async {
     setState(() => _isSyncing = true);
-    // 这里放置你的云端同步逻辑
     await Future.delayed(const Duration(seconds: 1));
     if (mounted) setState(() => _isSyncing = false);
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
-    // 2. 采用 HEAD 分支的动态主题配色逻辑
+    // theme and color scheme for consistent styling
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
@@ -41,29 +38,8 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
           icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        // 3. 整合 HEAD 分支的同步按钮 Actions
-        actions: [
-          _isSyncing
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                )
-              : IconButton(
-                  icon: Icon(Icons.sync, color: colorScheme.onSurface),
-                  onPressed: _handleSync,
-                ),
-        ],
-      ),
-      // 4. 采用 af1cd3 分支的 StreamBuilder 实现自动刷新
+    ),
+      // automatically update the list when database changes
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: SeeLaterDao.streamSeeLater(),
         builder: (context, snapshot) {
@@ -101,7 +77,6 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
                       width: 60,
                       height: 90,
                       fit: BoxFit.cover,
-                      // 采用 HEAD 分支更友好的错误占位
                       errorBuilder: (context, e, s) => Container(
                         width: 60,
                         height: 90,
@@ -114,13 +89,13 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
                     movie['title'] ?? "Unknown",
                     style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.bold),
                   ),
-                  // 5. 保留 HEAD 分支特有的 subtitle (显示年份)
-                  subtitle: movie['year'] != null 
+                  // only show year if it's valid
+                  /*subtitle: movie['year'] != null 
                       ? Text(
                           movie['year'],
                           style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
                         )
-                      : null,
+                      : null,*/
                       //add the delete button
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,

@@ -10,16 +10,14 @@ class FavoritePage extends StatefulWidget {
 }
 
 class _FavoritePageState extends State<FavoritePage> {
-  // 保留 HEAD 中的同步状态变量
-  bool _isSyncing = false;
+  
+  //bool _isSyncing = false;
 
-  // 模拟同步处理逻辑
-  Future<void> _handleSync() async {
+  /*Future<void> _handleSync() async {
     setState(() => _isSyncing = true);
-    // 这里执行你的同步逻辑，例如从服务器拉取最新收藏
     await Future.delayed(const Duration(seconds: 1)); 
     if (mounted) setState(() => _isSyncing = false);
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -36,29 +34,9 @@ class _FavoritePageState extends State<FavoritePage> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          // 保留 HEAD 中的同步按钮功能
-          _isSyncing
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                )
-              : IconButton(
-                  icon: Icon(Icons.sync, color: colorScheme.onSurface),
-                  onPressed: _handleSync,
-                ),
-        ],
+        
       ),
-      // 采用远程分支的 StreamBuilder，实现数据自动刷新
+      
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: FavoriteDao.streamAllFavorites(),
         builder: (context, snapshot) {
@@ -93,7 +71,7 @@ class _FavoritePageState extends State<FavoritePage> {
   }
 }
 
-// 将 Item 提取为独立组件，并保留 HEAD 的精致样式
+
 class _FavoriteItem extends StatelessWidget {
   final Map<String, dynamic> movie;
   final ColorScheme colorScheme;
@@ -160,7 +138,6 @@ class _FavoriteItem extends StatelessWidget {
               icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
               onPressed: () async {
                 await FavoriteDao.deleteFavorite(movie["imdb_id"]);
-                // 由于使用了 StreamBuilder，删除后列表会自动更新
               },
             ),
           ],

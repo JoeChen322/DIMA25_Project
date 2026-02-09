@@ -1,8 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:lumi_list/database/user.dart'; // 确保 UserDao 包含 profileStream, updateUser, logout 方法
-
+import 'package:lumi_list/database/user.dart'; 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -11,7 +10,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // 处理编辑跳转，保留 af1cd3 的参数传递逻辑和 HEAD 的持久化逻辑
   Future<void> _navigateToEdit({
     required String name,
     required String bio,
@@ -44,25 +42,23 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _logout() async {
     await UserDao.logout();
     if (!mounted) return;
-    // 使用 pushNamedAndRemoveUntil 确保清理路由栈
     Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
   }
 
   @override
   Widget build(BuildContext context) {
-    // 整合 HEAD 的主题获取
+    //get current theme and color scheme for dynamic styling
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     
-    // 整合 af1cd3 的邮箱兜底
+    // use email from FirebaseAuth as fallback if profile data doesn't have email 
     final fallbackEmail = FirebaseAuth.instance.currentUser?.email ?? "N/A";
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
-          // 背景装饰物（保留 HEAD 的高斯模糊装饰）
           Positioned(
             top: -100,
             right: -50,
@@ -80,7 +76,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           SafeArea(
-            // 采用 af1cd3 的 StreamBuilder 实现响应式数据读取
             child: StreamBuilder(
               stream: UserDao.profileStream(),
               builder: (context, snapshot) {
@@ -90,7 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   );
                 }
 
-                // 登录状态检查（来自 af1cd3）
+                // check if user is logged in and has profile data
                 if (!snapshot.hasData) {
                   return Center(
                     child: Column(
@@ -108,7 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   );
                 }
 
-                // 数据解析
+                // data is available, extract user info with fallbacks
                 final doc = snapshot.data;
                 final data = (doc as dynamic).data() as Map<String, dynamic>?;
 
@@ -126,7 +121,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
-                      // 顶部导航栏 (整合 HEAD 的动态颜色)
+                      //top bar
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -156,7 +151,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ],
                       ),
                       const SizedBox(height: 30),
-                      // 头像部分 (整合 af1cd3 的逻辑与 HEAD 的 UI)
+                      // profile photo
                       Center(
                         child: Container(
                           padding: const EdgeInsets.all(4),
@@ -181,7 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // 用户基本信息
+                      // basic info (name and bio)
                       Text(
                         name,
                         style: TextStyle(
@@ -197,11 +192,11 @@ class _ProfilePageState extends State<ProfilePage> {
                             color: colorScheme.onSurfaceVariant, fontSize: 14),
                       ),
                       const SizedBox(height: 40),
-                      // 列表信息项 (整合 HEAD 的方法参数)
+                      // contact info tiles
                       _buildDarkInfoTile("Email", email, Icons.email_rounded, colorScheme, isDark),
                       _buildDarkInfoTile("Phone", phone, Icons.phone_iphone_rounded, colorScheme, isDark),
                       const SizedBox(height: 50),
-                      // 退出登录按钮
+                      // logout button
                       SizedBox(
                         width: double.infinity,
                         child: TextButton.icon(
@@ -231,7 +226,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // 辅助组件：保留 HEAD 的动态样式定义
+  
   Widget _buildDarkInfoTile(String label, String value, IconData icon, ColorScheme colorScheme, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),

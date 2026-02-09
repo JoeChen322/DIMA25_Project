@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // 抽离出的跳转注册逻辑
+  //change page to signup
   Future<void> _navigateToSignup() async {
     final result = await Navigator.pushNamed(context, '/signup');
     if (result != null && result is Map && mounted) {
@@ -66,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // --- Logo 区域 ---
+              // --- Logo ---
               Container(
                 width: 80,
                 height: 80,
@@ -108,7 +108,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 40),
 
-              // --- 登录表单卡片 ---
+              // --- login ---
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Container(
@@ -157,12 +157,12 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 20),
 
-                      // 登录按钮
+                      // login button
                       _buildPrimaryButton(),
                       
                       const SizedBox(height: 16),
 
-                      // 新账号注册按钮 (替代了原来的 Google 登录位置)
+                      // sinup button
                       _buildSecondaryButton(),
                     ],
                   ),
@@ -170,8 +170,8 @@ class _LoginPageState extends State<LoginPage> {
               ),
               
               const SizedBox(height: 40),
-              // 底部的辅助信息或版本号（可选）
-              Text("© 2024 LumiList. All rights reserved.", 
+              
+              Text("© 2026 LumiList. All rights reserved.", 
                 style: TextStyle(color: Colors.grey[400], fontSize: 12)),
             ],
           ),
@@ -180,7 +180,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // 主登录按钮
+  // main login button
   Widget _buildPrimaryButton() {
     return SizedBox(
       width: double.infinity,
@@ -200,7 +200,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // 注册新账号按钮
+  // signup button
   Widget _buildSecondaryButton() {
     return SizedBox(
       width: double.infinity,

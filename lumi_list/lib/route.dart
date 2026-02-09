@@ -6,7 +6,6 @@ import 'pages/signup_page.dart';
 
 import 'pages/home_page.dart';
 import 'pages/search_page.dart';
-//import 'pages/movie_detail.dart';
 import 'pages/me_page.dart';
 
 import 'pages/edit_profile_page.dart';
@@ -18,7 +17,7 @@ import 'pages/see_later_page.dart';
 import 'pages/auth_gate.dart';
 
 final Map<String, WidgetBuilder> appRoutes = {
-  '/': (context) => const AuthGate(), // <-- changed
+  '/': (context) => const AuthGate(), 
   '/login': (context) => const LoginPage(),
   '/signup': (context) => const SignupPage(),
   '/forgot_password': (context) => const ForgotPasswordPage(),

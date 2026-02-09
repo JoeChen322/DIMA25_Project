@@ -25,23 +25,21 @@ class _ClassicsPageState extends State<ClassicsPage> {
     _fetchClassics();
   }
 
-  // ... 前面 import 部分保持不变 ...
 
   Future<void> _fetchClassics() async {
     try {
-      // 👈 核心修改：并发请求前 3 页数据 (每页 20 条，3 页共 60 条)
+      // request top rated movies from TMDB, fetching 3 pages to get at least 50 movies
       final results = await Future.wait([
         _tmdbService.getTopRatedMovies(page: 1),
         _tmdbService.getTopRatedMovies(page: 2),
         _tmdbService.getTopRatedMovies(page: 3),
       ]);
 
-      // 将三页数据合并为一个 List
+      // merge results and take list
       List<dynamic> allMovies = results.expand((x) => x).toList();
 
       if (mounted) {
         setState(() {
-          // 👈 核心修改：只取前 50 名
           _topMovies = allMovies.take(50).toList();
           _isLoading = false;
         });
@@ -93,7 +91,7 @@ class _ClassicsPageState extends State<ClassicsPage> {
     );
   }
 
-  // _buildMovieItem 部分保持不变 ...
+
 
   Widget _buildMovieItem(dynamic movie, int rank, ColorScheme colorScheme, bool isDark) {
     return GestureDetector(
