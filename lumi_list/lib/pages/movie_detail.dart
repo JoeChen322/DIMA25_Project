@@ -217,7 +217,7 @@ Widget build(BuildContext context) {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             MovieActionButton(icon: isFavorite ? Icons.favorite : Icons.favorite_border, iconColor: Colors.red, label: isFavorite ? "Saved" : "My List", onTap: _toggleFavorite),
-            MovieActionButton(icon: Icons.star, iconColor: userRating != null ? Colors.amber : Colors.grey, label: userRating != null ? "My: $userRating" : "Rate", onTap: _showRatingDialog),
+            MovieActionButton(icon: Icons.star, iconColor: userRating != null ? Colors.amber : Colors.grey, label: userRating != null ? "Rated: $userRating" : "Rate", onTap: _showRatingDialog),
             MovieActionButton(icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined, iconColor: Colors.blueAccent, label: isSeeLater ? "In Later" : "Later", onTap: _toggleSeeLater),
           ],
         ),
@@ -243,7 +243,31 @@ Widget build(BuildContext context) {
           },
         ),
         const SizedBox(height: 20),
-        if (genreList.isNotEmpty) Wrap(alignment: WrapAlignment.center, spacing: 8.0, runSpacing: 4.0, children: genreList.map((genre) => Chip(label: Text(genre, style: const TextStyle(color: Colors.white, fontSize: 12)), backgroundColor: const Color.fromARGB(255, 87, 33, 235).withOpacity(0.3), side: BorderSide(color: const Color.fromARGB(255, 95, 47, 225).withOpacity(0.5)), padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0), visualDensity: VisualDensity.compact)).toList()),
+        if (genreList.isNotEmpty)
+          Wrap(
+            alignment: WrapAlignment.center, 
+            crossAxisAlignment: WrapCrossAlignment.center, 
+            spacing: 8.0, 
+            runSpacing: 4.0,
+            children: [
+              const Text(
+                "Category: ",
+                style: TextStyle(
+                  color: Color.fromARGB(179, 255, 156, 245), 
+                  fontSize: 14, 
+                  fontWeight: FontWeight.bold
+                ),
+              ),
+              ...genreList.map((genre) => Text(
+                genre,
+                style: const TextStyle(
+                  color: Color.fromARGB(255, 140, 100, 255), 
+                  fontSize: 14,
+                ),
+              )).toList(),
+            ],
+          ),
+if (genreList.isNotEmpty) const SizedBox(height: 20),
         if (genreList.isNotEmpty) const SizedBox(height: 20),
         const Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 10),
