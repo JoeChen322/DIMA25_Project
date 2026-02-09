@@ -11,6 +11,7 @@ import '../database/favorite.dart';
 import '../database/personal_rate.dart';
 import '../database/seelater.dart';
 import '../widgets/icon_action_button.dart';
+
 class MovieDetailPage extends StatefulWidget {
   final Map<String, dynamic> movie;
 
@@ -23,7 +24,7 @@ class MovieDetailPage extends StatefulWidget {
 class _MovieDetailPageState extends State<MovieDetailPage> {
   bool isFavorite = false;
   int? userRating; 
-  bool _isExpanded=false;
+  bool _isExpanded = false;
   bool isSeeLater = false;
   
   final TmdbService tmdbService = TmdbService(
@@ -33,34 +34,31 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   bool isLoadingCast = true;
   String? realImdbId; 
   Map<String, dynamic>? fullOmdbData; 
-  String _plot="Loading Summary...";
+  String _plot = "Loading Summary...";
   String _year = "NA";
   String _director = "No Info";
   String _genre = "No Info";
+
   @override
   void initState() {
     super.initState();
     _initializeData();
   }
 
-  /*------isolated net request，use future to load parallelly and avoid blocking the UI------ */
   Future<void> _initializeData() async {
     String? id = widget.movie['imdbID']; 
     int? tmdbId;
 
-    // change all ids to both TMDb and IMDB into IMDB ID
-    if (id != null && !id.startsWith('tt'))
-    {
+    if (id != null && !id.startsWith('tt')) {
       tmdbId = int.parse(id);
       realImdbId = await tmdbService.getImdbIdByTmdbId(tmdbId);
-      _loadOmdbDetails(realImdbId!);
+      if (realImdbId != null) _loadOmdbDetails(realImdbId!);
     } else if (id != null && id.startsWith('tt')) {
       _loadOmdbDetails(id);
       realImdbId = id;
       tmdbId = await tmdbService.getMovieIdByImdb(id);
     }
 
-    // load cast and OMDb data
     if (tmdbId != null) _loadCast(tmdbId);
 
     if (realImdbId != null) {
@@ -74,52 +72,40 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           isFavorite = favoriteStatus;
           isSeeLater = laterStatus;
           userRating = savedRating;
-
         });
       }
     }
   }
 
-Future<void> _loadOmdbDetails(String id) async {
-  try {
-    final details = await OmdbApi.getMovieById(id); 
-    
-    if (mounted && details != null) {
-      setState(() {
-        _director = details['Director'] ?? "No Info";
-        _plot = details['Plot'] ?? "No summary available.";
-        _year = details['Year'] ?? "";
-        _genre = details['Genre'] ?? "No Info";
-      });
+  Future<void> _loadOmdbDetails(String id) async {
+    try {
+      final details = await OmdbApi.getMovieById(id); 
+      if (mounted && details != null) {
+        setState(() {
+          _director = details['Director'] ?? "No Info";
+          _plot = details['Plot'] ?? "No summary available.";
+          _year = details['Year'] ?? "";
+          _genre = details['Genre'] ?? "No Info";
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _plot = "Failed to load summary.");
     }
-  } catch (e) {
-    setState(() {
-      _plot = "Failed to load summary.";
-    });
   }
-}
 
-  Future<void> _checkSeeLaterStatus() async {
-  if (realImdbId != null) {
-    final status = await SeeLaterDao.isSeeLater(realImdbId!);
-    setState(() => isSeeLater = status);
+  Future<void> _toggleSeeLater() async {
+    if (realImdbId == null) return;
+    if (isSeeLater) {
+      await SeeLaterDao.deleteSeeLater(realImdbId!);
+    } else {
+      await SeeLaterDao.insertSeeLater(
+        imdbId: realImdbId!,
+        title: widget.movie['Title'] ?? "Unknown",
+        poster: widget.movie['Poster'] ?? "",
+      );
+    }
+    setState(() => isSeeLater = !isSeeLater);
   }
-}
-
-// see later status
-Future<void> _toggleSeeLater() async {
-  if (realImdbId == null) return;
-  if (isSeeLater) {
-    await SeeLaterDao.deleteSeeLater(realImdbId!);
-  } else {
-    await SeeLaterDao.insertSeeLater(
-      imdbId: realImdbId!,
-      title: widget.movie['Title'] ?? "Unknown",
-      poster: widget.movie['Poster'] ?? "",
-    );
-  }
-  setState(() => isSeeLater = !isSeeLater);
- }
   
   Future<void> _loadCast(int tmdbId) async {
     try {
@@ -129,7 +115,7 @@ Future<void> _toggleSeeLater() async {
       if (mounted) setState(() => isLoadingCast = false);
     }
   }
- // favorite state
+
   Future<void> _toggleFavorite() async {
     if (realImdbId == null) return;
     if (isFavorite) {
@@ -145,167 +131,198 @@ Future<void> _toggleSeeLater() async {
     setState(() => isFavorite = !isFavorite);
   }
 
-  // show rating dialog
-void _showRatingDialog() {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Rate this Movie"),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children:[
-          const SizedBox(height: 10),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(5, (index) => IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: Icon(
-                Icons.star, 
-                size: 45,
-                color: (userRating ?? 0) > index ? Colors.amber : Colors.grey
-             ),
-             onPressed: () async {
-               int newScore = index + 1;
-              //store the new rating in the database
-               if (realImdbId != null) {
-                await PersonalRateDao.insertOrUpdateRate(
-                imdbId: realImdbId!,
-                title: widget.movie['Title'] ?? "Unknown",
-                rating: newScore,
-              );
-            }
-
-            if (mounted) {
-              setState(() => userRating = newScore); 
-            }
-            Navigator.pop(context);
-          },
-        )),
-      ),
-    ),
-  ],
-      ),
-    ),
-  );
-}
-
-  @override
-Widget build(BuildContext context) {
-  final theme = Theme.of(context);
-  final colorScheme = theme.colorScheme;
-  final isDark = theme.brightness == Brightness.dark;
-  // 1. Detect orientation
-  final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
-  final screenWidth = MediaQuery.of(context).size.width;
-
-  // Rating logic (remains unchanged)
-  String imdb = "No Info";
-  String rotten = "No Info";
-  String meta = "No Info";
-  List<String> genreList = _genre.split(',').map((e) => e.trim()).toList();
-  genreList.removeWhere((element) => element == "No Info" || element.isEmpty);
-  final ratings = fullOmdbData?['Ratings'] as List?;
-  if (ratings != null) {
-    for (var r in ratings) {
-      if (r['Source'] == 'Internet Movie Database') imdb = r['Value'];
-      if (r['Source'] == 'Rotten Tomatoes') rotten = r['Value'];
-      if (r['Source'] == 'Metacritic') meta = r['Value'];
-    }
-  } else {
-    imdb = widget.movie['imdbRating'] ?? "No Info";
-  }
-
-  // Define the main column content to reuse it in both layouts
-  Widget detailContent = Padding(
-    padding: const EdgeInsets.all(16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("${widget.movie['Title']} ($_year)", style:  TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-        Text("——$_director", style:  TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+  void _showRatingDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Rate this Movie"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            MovieActionButton(icon: isFavorite ? Icons.favorite : Icons.favorite_border, iconColor: Colors.red, label: isFavorite ? "Saved" : "My List", onTap: _toggleFavorite),
-            MovieActionButton(icon: Icons.star, iconColor: userRating != null ? Colors.amber : Colors.grey, label: userRating != null ? "My: $userRating" : "Rate", onTap: _showRatingDialog),
-            MovieActionButton(icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined, iconColor: Colors.blueAccent, label: isSeeLater ? "In Later" : "Later", onTap: _toggleSeeLater),
+            const SizedBox(height: 10),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) => IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    Icons.star, 
+                    size: 45,
+                    color: (userRating ?? 0) > index ? Colors.amber : Colors.grey
+                  ),
+                  onPressed: () async {
+                    int newScore = index + 1;
+                    if (realImdbId != null) {
+                      await PersonalRateDao.insertOrUpdateRate(
+                        imdbId: realImdbId!,
+                        title: widget.movie['Title'] ?? "Unknown",
+                        rating: newScore,
+                      );
+                    }
+                    if (mounted) setState(() => userRating = newScore); 
+                    Navigator.pop(context);
+                  },
+                )),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 20),
-        Text("Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-        const SizedBox(height: 8),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final span = TextSpan(text: _plot ?? "No summary available.", style: const TextStyle(fontSize: 16));
-            final tp = TextPainter(text: span, maxLines: 3, textDirection: TextDirection.ltr);
-            tp.layout(maxWidth: constraints.maxWidth);
-            final bool isExceeding = tp.didExceedMaxLines;
-            return InkWell(
-              onTap: isExceeding ? () => setState(() => _isExpanded = !_isExpanded) : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    String imdb = "No Info";
+    String rotten = "No Info";
+    String meta = "No Info";
+    List<String> genreList = _genre.split(',').map((e) => e.trim()).toList();
+    genreList.removeWhere((element) => element == "No Info" || element.isEmpty);
+
+    final ratings = fullOmdbData?['Ratings'] as List?;
+    if (ratings != null) {
+      for (var r in ratings) {
+        if (r['Source'] == 'Internet Movie Database') imdb = r['Value'];
+        if (r['Source'] == 'Rotten Tomatoes') rotten = r['Value'];
+        if (r['Source'] == 'Metacritic') meta = r['Value'];
+      }
+    } else {
+      imdb = widget.movie['imdbRating'] ?? "No Info";
+    }
+
+    Widget detailContent = Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("${widget.movie['Title']} ($_year)", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+          Text("——$_director", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              MovieActionButton(icon: isFavorite ? Icons.favorite : Icons.favorite_border, iconColor: Colors.red, label: isFavorite ? "Saved" : "My List", onTap: _toggleFavorite),
+              MovieActionButton(icon: Icons.star, iconColor: userRating != null ? Colors.amber : Colors.grey, label: userRating != null ? "Rated: $userRating" : "Rate", onTap: _showRatingDialog),
+              MovieActionButton(icon: isSeeLater ? Icons.watch_later : Icons.watch_later_outlined, iconColor: Colors.blueAccent, label: isSeeLater ? "In Later" : "Later", onTap: _toggleSeeLater),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text("Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+          const SizedBox(height: 8),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final span = TextSpan(text: _plot, style: const TextStyle(fontSize: 16));
+              final tp = TextPainter(text: span, maxLines: 3, textDirection: TextDirection.ltr);
+              tp.layout(maxWidth: constraints.maxWidth);
+              final bool isExceeding = tp.didExceedMaxLines;
+              return InkWell(
+                onTap: isExceeding ? () => setState(() => _isExpanded = !_isExpanded) : null,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_plot, maxLines: _isExpanded ? null : 3, overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16)),
+                    if (isExceeding) Align(alignment: Alignment.centerRight, child: Padding(padding: const EdgeInsets.only(top: 4.0), child: Text(_isExpanded ? "Fold" : "More...", style: const TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold, fontSize: 14)))),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+          
+          // --- 整合后的分类部分 ---
+          if (genreList.isNotEmpty)
+            Wrap(
+              alignment: WrapAlignment.start, 
+              crossAxisAlignment: WrapCrossAlignment.center, 
+              spacing: 8.0, 
+              runSpacing: 4.0,
+              children: [
+                const Text(
+                  "Category: ",
+                  style: TextStyle(
+                    color: Color.fromARGB(179, 255, 156, 245), 
+                    fontSize: 14, 
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+                ...genreList.map((genre) => Chip(
+                  label: Text(genre, style: TextStyle(color: colorScheme.onPrimaryContainer, fontSize: 12)),
+                  backgroundColor: const Color.fromARGB(255, 87, 33, 235).withOpacity(0.3),
+                  side: BorderSide(color: const Color.fromARGB(255, 95, 47, 225).withOpacity(0.5)),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                  visualDensity: VisualDensity.compact,
+                )).toList(),
+              ],
+            ),
+          if (genreList.isNotEmpty) const SizedBox(height: 20),
+          // ------------------------
+
+          Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+          const SizedBox(height: 10),
+          isLoadingCast ? const Center(child: CircularProgressIndicator()) : CastStrip(cast: cast),
+          const SizedBox(height: 30),
+          Container(
+            width: double.infinity, 
+            padding: const EdgeInsets.all(16), 
+            decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest.withOpacity(0.3), borderRadius: BorderRadius.circular(12)), 
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, 
+              children: [
+                Text("Ratings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)), 
+                const SizedBox(height: 12), 
+                _buildRatingLine("IMDb", imdb, colorScheme), 
+                _buildRatingLine("Rotten Tomatoes", rotten, colorScheme), 
+                _buildRatingLine("Metascore", meta, colorScheme)
+              ]
+            )
+          ),
+          const SizedBox(height: 50),
+        ],
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: isLandscape
+          ? Row(
+              children: [
+                SizedBox(
+                  width: screenWidth * 0.4,
+                  height: double.infinity,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(widget.movie['Poster'] ?? "", fit: BoxFit.cover),
+                      Positioned(top: 50, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
+                    ],
+                  ),
+                ),
+                Expanded(child: SingleChildScrollView(child: detailContent)),
+              ],
+            )
+          : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_plot ?? "No summary available.", maxLines: _isExpanded ? null : 3, overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16)),
-                  if (isExceeding) Align(alignment: Alignment.centerRight, child: Padding(padding: const EdgeInsets.only(top: 4.0), child: Text(_isExpanded ? "Fold" : "More...", style: const TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold, fontSize: 14)))),
+                  Stack(
+                    children: [
+                      Image.network(widget.movie['Poster'] ?? "", width: double.infinity, height: 530, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => Container(height: 530, color: Colors.grey[900], child: const Icon(Icons.broken_image, size: 80, color: Colors.white))),
+                      Positioned(top: 80, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
+                    ],
+                  ),
+                  detailContent,
                 ],
               ),
-            );
-          },
-        ),
-        const SizedBox(height: 20),
-        if (genreList.isNotEmpty) Wrap(alignment: WrapAlignment.center, spacing: 8.0, runSpacing: 4.0, children: genreList.map((genre) => Chip(label: Text(genre, style: TextStyle(color: colorScheme.onPrimaryContainer, fontSize: 12)), backgroundColor: const Color.fromARGB(255, 87, 33, 235).withOpacity(0.3), side: BorderSide(color: const Color.fromARGB(255, 95, 47, 225).withOpacity(0.5)), padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0), visualDensity: VisualDensity.compact)).toList()),
-        if (genreList.isNotEmpty) const SizedBox(height: 20),
-        Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
-        const SizedBox(height: 10),
-        isLoadingCast ? const Center(child: CircularProgressIndicator()) : CastStrip(cast: cast),
-        const SizedBox(height: 30),
-        Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest.withOpacity(0.3), borderRadius: BorderRadius.circular(12)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Ratings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)), const SizedBox(height: 12), _buildRatingLine("IMDb", imdb, colorScheme), _buildRatingLine("Rotten Tomatoes", rotten, colorScheme), _buildRatingLine("Metascore", meta, colorScheme)])),
-        const SizedBox(height: 50),
-      ],
-    ),
-  );
-
-  return Scaffold(
-    backgroundColor: colorScheme.surface,
-    body: isLandscape
-        ? Row(
-            children: [
-              // Left side: Fixed Poster
-              SizedBox(
-                width: screenWidth * 0.4, // 40% of screen width
-                height: double.infinity,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(widget.movie['Poster'] ?? "", fit: BoxFit.cover),
-                    Positioned(top: 50, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
-                  ],
-                ),
-              ),
-              // Right side: Scrollable Details
-              Expanded(child: SingleChildScrollView(child: detailContent)),
-            ],
-          )
-        : SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    Image.network(widget.movie['Poster'] ?? "", width: double.infinity, height: 530, fit: BoxFit.cover, errorBuilder: (context, error, stackTrace) => Container(height: 530, color: Colors.grey[900], child: const Icon(Icons.broken_image, size: 80, color: Colors.white))),
-                    Positioned(top: 80, left: 20, child: CircleAvatar(backgroundColor: Colors.black54, child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)))),
-                  ],
-                ),
-                detailContent,
-              ],
             ),
-          ),
-  );
-}
+    );
+  }
   
   Widget _buildRatingLine(String platform, String score, ColorScheme colorScheme) {
     return Padding(

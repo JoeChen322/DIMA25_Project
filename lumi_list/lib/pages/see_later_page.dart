@@ -1,13 +1,6 @@
-/* In ME/Watch Later Page 
-to display the list of movies marked to watch later */
-
 import 'package:flutter/material.dart';
-import '../database/seelater.dart'; 
-import 'movie_detail.dart';
-
-import 'package:flutter/material.dart';
-import 'movie_detail.dart';
 import '../database/seelater.dart';
+import 'movie_detail.dart';
 
 class SeeLaterPage extends StatefulWidget {
   const SeeLaterPage({super.key});
@@ -17,78 +10,76 @@ class SeeLaterPage extends StatefulWidget {
 }
 
 class _SeeLaterPageState extends State<SeeLaterPage> {
-  bool _isSyncing = false; 
+  // 1. 保留 HEAD 分支引入的同步状态
+  bool _isSyncing = false;
 
-  
-  void _refresh() {
-    setState(() {});
-  }
-
+  // 模拟同步逻辑
   Future<void> _handleSync() async {
     setState(() => _isSyncing = true);
-    try {
-      await SeeLaterDao.syncWithFirebase();
-      _refresh(); 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Sync completed!")),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Sync failed: $e")),
-      );
-    } finally {
-      setState(() => _isSyncing = false);
-    }
+    // 这里放置你的云端同步逻辑
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) setState(() => _isSyncing = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    // 2. 采用 HEAD 分支的动态主题配色逻辑
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text("Watch Later", 
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          "Watch Later",
+          style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
-        // --- sys button ---
+        // 3. 整合 HEAD 分支的同步按钮 Actions
         actions: [
           _isSyncing
               ? Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: SizedBox(
-                      width: 20, height: 20, 
-                      child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary)
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.primary,
+                      ),
                     ),
                   ),
                 )
               : IconButton(
                   icon: Icon(Icons.sync, color: colorScheme.onSurface),
-
                   onPressed: _handleSync,
                 ),
         ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: SeeLaterDao.getSeeLaterMovies(),
+      // 4. 采用 af1cd3 分支的 StreamBuilder 实现自动刷新
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: SeeLaterDao.streamSeeLater(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator(color: colorScheme.primary));
           }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+
+          final movies = snapshot.data ?? [];
+          if (movies.isEmpty) {
             return Center(
-              child: Text("Your list is empty", style: TextStyle(color: colorScheme.onSurfaceVariant)),
+              child: Text(
+                "Your list is empty",
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
+              ),
             );
           }
-
-          final movies = snapshot.data!;
 
           return ListView.builder(
             itemCount: movies.length,
@@ -107,21 +98,34 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
                       movie['poster'] ?? "",
-                      width: 60, height: 90,
+                      width: 60,
+                      height: 90,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, e, s) => 
-                          Container(width: 60, height: 90, color: colorScheme.surfaceContainerHighest, child: Icon(Icons.broken_image, color: colorScheme.onSurfaceVariant)),
+                      // 采用 HEAD 分支更友好的错误占位
+                      errorBuilder: (context, e, s) => Container(
+                        width: 60,
+                        height: 90,
+                        color: colorScheme.surfaceContainerHighest,
+                        child: Icon(Icons.broken_image, color: colorScheme.onSurfaceVariant),
+                      ),
                     ),
                   ),
                   title: Text(
                     movie['title'] ?? "Unknown",
                     style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.bold),
                   ),
-                  subtitle: Text(
-                    movie['year'] ?? "",
-                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  // 5. 保留 HEAD 分支特有的 subtitle (显示年份)
+                  subtitle: movie['year'] != null 
+                      ? Text(
+                          movie['year'],
+                          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+                        )
+                      : null,
+                  trailing: Icon(
+                    Icons.arrow_forward_ios,
+                    color: colorScheme.onSurfaceVariant,
+                    size: 16,
                   ),
-                  trailing: Icon(Icons.arrow_forward_ios, color: colorScheme.onSurfaceVariant, size: 16),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -130,10 +134,9 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
                           'imdbID': movie['imdb_id'],
                           'Title': movie['title'],
                           'Poster': movie['poster'],
-                          'Year': movie['year']
                         }),
                       ),
-                    ).then((_) => _refresh()); 
+                    );
                   },
                 ),
               );

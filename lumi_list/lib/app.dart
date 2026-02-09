@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'route.dart';
 
 class LumiListApp extends StatelessWidget {
-  const LumiListApp({super.key});
+  final String initialRoute; // 定义参数
+
+  const LumiListApp({super.key, required this.initialRoute}); // 构造函数接收
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +28,8 @@ class LumiListApp extends StatelessWidget {
       themeMode: ThemeMode.system,
 
       // Set initial route and define routes
-      initialRoute: '/splash',
+      initialRoute: initialRoute, // 使用传入的参数
       routes: appRoutes,
-
-  
     );
   }
 }

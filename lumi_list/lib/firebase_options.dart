@@ -41,48 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAYMv5P7srmjFMfQ_VIv9wxG9JLQwMiPlU',
-    appId: '1:390786832651:web:517eb49b058c9ca3db6a0e',
-    messagingSenderId: '390786832651',
-    projectId: 'lumilist-c9c1e',
-    authDomain: 'lumilist-c9c1e.firebaseapp.com',
-    storageBucket: 'lumilist-c9c1e.firebasestorage.app',
-    measurementId: 'G-JVZHN0YENF',
+    apiKey: 'AIzaSyB1h4JXXt9WIuytnUBczRDBnV2_OrBIlTg',
+    appId: '1:547627529035:web:a376c79404cecc3f32eece',
+    messagingSenderId: '547627529035',
+    projectId: 'lumi-list-project-4d802',
+    authDomain: 'lumi-list-project-4d802.firebaseapp.com',
+    storageBucket: 'lumi-list-project-4d802.firebasestorage.app',
+    measurementId: 'G-FMV3EFJ1JE',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAiDmj8hGV7b3OIkIuHWmnBEDVmD2CEDm0',
-    appId: '1:390786832651:android:edd48301b40b45f4db6a0e',
-    messagingSenderId: '390786832651',
-    projectId: 'lumilist-c9c1e',
-    storageBucket: 'lumilist-c9c1e.firebasestorage.app',
+    apiKey: 'AIzaSyA_oUg565JUFiECn1xugQwGFvnDbz9mVng',
+    appId: '1:547627529035:android:490b53d880ab62bf32eece',
+    messagingSenderId: '547627529035',
+    projectId: 'lumi-list-project-4d802',
+    storageBucket: 'lumi-list-project-4d802.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBEUmWqpPgmQbnI0_jbpJXdpccUWJdycB4',
-    appId: '1:390786832651:ios:019991154500a3e4db6a0e',
-    messagingSenderId: '390786832651',
-    projectId: 'lumilist-c9c1e',
-    storageBucket: 'lumilist-c9c1e.firebasestorage.app',
+    apiKey: 'AIzaSyAfKcSNiPHIagMWdg9ge5OFhXqJPrtxLR8',
+    appId: '1:547627529035:ios:290f3b7bc9f12cf032eece',
+    messagingSenderId: '547627529035',
+    projectId: 'lumi-list-project-4d802',
+    storageBucket: 'lumi-list-project-4d802.firebasestorage.app',
     iosBundleId: 'com.example.lumiList',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBEUmWqpPgmQbnI0_jbpJXdpccUWJdycB4',
-    appId: '1:390786832651:ios:019991154500a3e4db6a0e',
-    messagingSenderId: '390786832651',
-    projectId: 'lumilist-c9c1e',
-    storageBucket: 'lumilist-c9c1e.firebasestorage.app',
+    apiKey: 'AIzaSyAfKcSNiPHIagMWdg9ge5OFhXqJPrtxLR8',
+    appId: '1:547627529035:ios:290f3b7bc9f12cf032eece',
+    messagingSenderId: '547627529035',
+    projectId: 'lumi-list-project-4d802',
+    storageBucket: 'lumi-list-project-4d802.firebasestorage.app',
     iosBundleId: 'com.example.lumiList',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAYMv5P7srmjFMfQ_VIv9wxG9JLQwMiPlU',
-    appId: '1:390786832651:web:d031028303c8a1d8db6a0e',
-    messagingSenderId: '390786832651',
-    projectId: 'lumilist-c9c1e',
-    authDomain: 'lumilist-c9c1e.firebaseapp.com',
-    storageBucket: 'lumilist-c9c1e.firebasestorage.app',
-    measurementId: 'G-9JB22JZWYY',
+    apiKey: 'AIzaSyB1h4JXXt9WIuytnUBczRDBnV2_OrBIlTg',
+    appId: '1:547627529035:web:70d6316e1e8ef0c832eece',
+    messagingSenderId: '547627529035',
+    projectId: 'lumi-list-project-4d802',
+    authDomain: 'lumi-list-project-4d802.firebaseapp.com',
+    storageBucket: 'lumi-list-project-4d802.firebasestorage.app',
+    measurementId: 'G-F1B53CC6PD',
   );
+
 }
