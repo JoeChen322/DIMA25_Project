@@ -31,18 +31,23 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = true);
 
+    // 修改后的 _handleLogin 方法片段
     try {
       await UserDao.login(_emailController.text, _passwordController.text);
 
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/'); // AuthGate decides
+      // 当跳转发生后，LoginPage 的生命周期可能已经结束
+      Navigator.pushReplacementNamed(context, '/'); 
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Login failed: $e")),
       );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      // 关键修复：确保只有在页面仍然挂载时才刷新状态
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

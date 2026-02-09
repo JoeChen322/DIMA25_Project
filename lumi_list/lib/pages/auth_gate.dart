@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import 'home_page.dart';
 import 'login_page.dart';
-import 'splash_page.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -13,9 +12,6 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SplashPage();
-        }
         return snapshot.hasData ? const HomePage() : const LoginPage();
       },
     );

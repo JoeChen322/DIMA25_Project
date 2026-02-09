@@ -11,7 +11,7 @@ import 'pages/me_page.dart';
 
 import 'pages/edit_profile_page.dart';
 import 'pages/forgot_password_page.dart';
-import 'pages/splash_page.dart';
+
 
 import 'pages/see_later_page.dart';
 
@@ -21,7 +21,6 @@ final Map<String, WidgetBuilder> appRoutes = {
   '/': (context) => const AuthGate(), // <-- changed
   '/login': (context) => const LoginPage(),
   '/signup': (context) => const SignupPage(),
-  '/splash': (context) => const SplashPage(),
   '/forgot_password': (context) => const ForgotPasswordPage(),
   '/profile': (context) => const ProfilePage(),
   '/edit_profile': (context) => const EditProfilePage(),
