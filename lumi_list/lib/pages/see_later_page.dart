@@ -1,90 +1,40 @@
-/* In ME/Watch Later Page 
-to display the list of movies marked to watch later */
-
 import 'package:flutter/material.dart';
-import '../database/seelater.dart'; 
-import 'movie_detail.dart';
-
-import 'package:flutter/material.dart';
-import 'movie_detail.dart';
 import '../database/seelater.dart';
+import 'movie_detail.dart';
 
-class SeeLaterPage extends StatefulWidget {
+class SeeLaterPage extends StatelessWidget {
   const SeeLaterPage({super.key});
-
-  @override
-  State<SeeLaterPage> createState() => _SeeLaterPageState();
-}
-
-class _SeeLaterPageState extends State<SeeLaterPage> {
-  bool _isSyncing = false; 
-
-  
-  void _refresh() {
-    setState(() {});
-  }
-
-  Future<void> _handleSync() async {
-    setState(() => _isSyncing = true);
-    try {
-      await SeeLaterDao.syncWithFirebase();
-      _refresh(); 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Sync completed!")),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Sync failed: $e")),
-      );
-    } finally {
-      setState(() => _isSyncing = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Watch Later", 
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Watch Later",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        // --- sys button ---
-        actions: [
-          _isSyncing
-              ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: SizedBox(
-                      width: 20, height: 20, 
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
-                    ),
-                  ),
-                )
-              : IconButton(
-                  icon: const Icon(Icons.sync, color: Colors.white),
-                  onPressed: _handleSync,
-                ),
-        ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: SeeLaterDao.getSeeLaterMovies(),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: SeeLaterDao.streamSeeLater(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+
+          final movies = snapshot.data ?? [];
+          if (movies.isEmpty) {
             return const Center(
-              child: Text("Your list is empty", style: TextStyle(color: Colors.grey)),
+              child: Text("Your list is empty",
+                  style: TextStyle(color: Colors.grey)),
             );
           }
-
-          final movies = snapshot.data!;
 
           return ListView.builder(
             itemCount: movies.length,
@@ -102,21 +52,20 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
                       movie['poster'] ?? "",
-                      width: 60, height: 90,
+                      width: 60,
+                      height: 90,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, e, s) => 
+                      errorBuilder: (context, e, s) =>
                           Container(width: 60, height: 90, color: Colors.grey),
                     ),
                   ),
                   title: Text(
                     movie['title'] ?? "Unknown",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
                   ),
-                  subtitle: Text(
-                    movie['year'] ?? "",
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 16),
+                  trailing: const Icon(Icons.arrow_forward_ios,
+                      color: Colors.white24, size: 16),
                   onTap: () {
                     Navigator.push(
                       context,
@@ -125,10 +74,9 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
                           'imdbID': movie['imdb_id'],
                           'Title': movie['title'],
                           'Poster': movie['poster'],
-                          'Year': movie['year']
                         }),
                       ),
-                    ).then((_) => _refresh()); 
+                    );
                   },
                 ),
               );

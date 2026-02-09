@@ -15,16 +15,17 @@ import 'pages/splash_page.dart';
 
 import 'pages/see_later_page.dart';
 
+import 'pages/auth_gate.dart';
+
 final Map<String, WidgetBuilder> appRoutes = {
-  '/': (context) => const HomePage(),
-  '/login': (context) => const LoginPage(), // LOGIN ROUTE
+  '/': (context) => const AuthGate(), // <-- changed
+  '/login': (context) => const LoginPage(),
   '/signup': (context) => const SignupPage(),
   '/splash': (context) => const SplashPage(),
   '/forgot_password': (context) => const ForgotPasswordPage(),
   '/profile': (context) => const ProfilePage(),
   '/edit_profile': (context) => const EditProfilePage(),
   '/search': (context) => const SearchPage(),
-  //'/detail': (context) => const MovieDetailPage(),
   '/mylist': (context) => const MyListPage(),
   '/seelater': (context) => const SeeLaterPage(),
 };

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../database/user.dart';
-//database
-import 'package:lumi_list/database/app_database.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,49 +14,42 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
 
   // set the primary color
-  final Color _primaryColor = Colors.deepPurple; 
+  final Color _primaryColor = Colors.deepPurple;
 
   bool _isLoading = false;
   bool _obscurePassword = true;
 
   Future<void> _handleLogin() async {
-  FocusScope.of(context).unfocus();
+    FocusScope.of(context).unfocus();
 
-  if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Please fill in all fields")),
-    );
-    return;
-  }
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in all fields")),
+      );
+      return;
+    }
 
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  try {
-    final user = await UserDao.login(_emailController.text, _passwordController.text);
+    try {
+      await UserDao.login(_emailController.text, _passwordController.text);
 
-    if (user != null) {
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/'); 
-    } else {
+      Navigator.pushReplacementNamed(context, '/'); // AuthGate decides
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email or Password incorrect")),
+        SnackBar(content: Text("Login failed: $e")),
       );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-  } catch (e) {
-    print("Error: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Database Error: $e")),
-    );
-  } finally {
-    if (mounted) setState(() => _isLoading = false);
   }
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), 
+      backgroundColor: const Color(0xFFF5F5F5),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -67,11 +58,11 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               // --- Logo and Welcome Text ---
               Container(
-                width: 80, 
+                width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.black, 
-                  borderRadius: BorderRadius.circular(20), 
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(20),
                   // shadow effect
                   boxShadow: [
                     BoxShadow(
@@ -82,10 +73,10 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
                 // clip the image to rounded corners
-                clipBehavior: Clip.hardEdge, 
-                
+                clipBehavior: Clip.hardEdge,
+
                 child: Padding(
-                  padding: const EdgeInsets.all(12.0), 
+                  padding: const EdgeInsets.all(12.0),
                   child: Image.asset(
                     'assets/icon/icon.png',
                     fit: BoxFit.contain,
@@ -107,7 +98,7 @@ class _LoginPageState extends State<LoginPage> {
                 "Sign in to continue to LumiList",
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
-              
+
               const SizedBox(height: 40),
 
               // --- Email & Password Fields ---
@@ -136,7 +127,7 @@ class _LoginPageState extends State<LoginPage> {
                         hintText: "hello@example.com",
                         icon: Icons.email_outlined,
                       ),
-                      
+
                       const SizedBox(height: 20),
 
                       _buildLabel("Password"),
@@ -152,23 +143,27 @@ class _LoginPageState extends State<LoginPage> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, '/forgot_password'); // sink to ForgotPasswordPage
+                            Navigator.pushNamed(context,
+                                '/forgot_password'); // sink to ForgotPasswordPage
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: _primaryColor,
                           ),
-                          child: const Text("Forgot password?", style: TextStyle(fontWeight: FontWeight.bold)),
+                          child: const Text("Forgot password?",
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 20),
 
-                      // Login Button 
+                      // Login Button
                       SizedBox(
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleLogin, // disable when loading
+                          onPressed: _isLoading
+                              ? null
+                              : _handleLogin, // disable when loading
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _primaryColor,
                             foregroundColor: Colors.white,
@@ -179,13 +174,14 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           child: _isLoading
                               ? const SizedBox(
-                                  width: 24, height: 24,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                                )
-                              : const Text(
-                                  "Login", 
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
-                                ),
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2))
+                              : const Text("Login",
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -201,12 +197,13 @@ class _LoginPageState extends State<LoginPage> {
                   Expanded(child: Divider(color: Colors.grey[300])),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text("Or login with", style: TextStyle(color: Colors.grey[500])),
+                    child: Text("Or login with",
+                        style: TextStyle(color: Colors.grey[500])),
                   ),
                   Expanded(child: Divider(color: Colors.grey[300])),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
 
               // --- Social Login Buttons ---
@@ -217,14 +214,14 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: () {
                     print("Google Login Tapped");
                   },
-                  icon: const FaIcon(FontAwesomeIcons.google, color: Colors.red, size: 20),
+                  icon: const FaIcon(FontAwesomeIcons.google,
+                      color: Colors.red, size: 20),
                   label: Text(
                     "Continue with Google",
                     style: TextStyle(
-                      color: Colors.grey[800],
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16
-                    ),
+                        color: Colors.grey[800],
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: Colors.grey[300]!),
@@ -235,30 +232,30 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 30),
-              
+
               // Sign Up Text with tappable "Create Account"
-               Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   Text("New User? ", style: TextStyle(color: Colors.grey[600])),
+                  Text("New User? ", style: TextStyle(color: Colors.grey[600])),
                   GestureDetector(
                     onTap: () async {
-                        // sink to SignupPage
-                        final result = await Navigator.pushNamed(context, '/signup');
-                        
-                        // Receive data from SignupPage
-                        if (result != null && result is Map) {
-                          setState(() {
-                            // automatic fill in email
-                            _emailController.text = result['email'];
-                            // automatic fill in password
-                            _passwordController.text = result['password'];
-                          });
-                          
-                        }
-                      },
+                      // sink to SignupPage
+                      final result =
+                          await Navigator.pushNamed(context, '/signup');
+
+                      // Receive data from SignupPage
+                      if (result != null && result is Map) {
+                        setState(() {
+                          // automatic fill in email
+                          _emailController.text = result['email'];
+                          // automatic fill in password
+                          _passwordController.text = result['password'];
+                        });
+                      }
+                    },
                     child: Text(
                       "Create Account",
                       style: TextStyle(
@@ -302,7 +299,9 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: TextField(
         controller: controller,
-        obscureText: isPassword ? _obscurePassword : false, // obscure or reveal for password
+        obscureText: isPassword
+            ? _obscurePassword
+            : false, // obscure or reveal for password
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(color: Colors.grey[400]),
@@ -322,7 +321,8 @@ class _LoginPageState extends State<LoginPage> {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
       ),
     );

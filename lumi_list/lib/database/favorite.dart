@@ -1,10 +1,15 @@
-/*Info of the favorites list associated with the ♥ button */
-import 'package:sqflite/sqflite.dart';
-import 'app_database.dart';
-import 'user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lumi_list/services/auth_service.dart';
+
 class FavoriteDao {
-  // add to favorites
+  static final _db = FirebaseFirestore.instance;
+
+  static CollectionReference<Map<String, dynamic>> _col() {
+    final uid = AuthService.uid;
+    if (uid == null) throw Exception("Please login first");
+    return _db.collection('users').doc(uid).collection('favorites');
+  }
+
   static Future<void> insertFavorite({
     required String imdbId,
     required String title,
@@ -12,139 +17,54 @@ class FavoriteDao {
     int? rating,
     String? genre,
   }) async {
-    final userId = UserDao.getCurrentUserId();
-    if (userId == null) throw Exception("Please login first");
-
-    final db = await AppDatabase.database;
-    await db.insert(
-      'favorites',
-      {
-        'user_id': userId,
-        'imdb_id': imdbId,
-        'title': title,
-        'poster': poster,
-        'genre': genre,
-        'rating': rating
-
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }static Future<void> deleteFavorite(String imdbId) async {
-    final userId = UserDao.getCurrentUserId();
-    if (userId == null) throw Exception("Please login first");
-
-    // 删除本地
-    final db = await AppDatabase.database;
-    await db.delete(
-      'favorites',
-      where: 'imdb_id = ? AND user_id = ?',
-      whereArgs: [imdbId, userId],
-    );
-
-    // 同步删除云端记录
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId.toString())
-          .collection('favorites')
-          .doc(imdbId)
-          .delete();
-    } catch (e) {
-      print("Cloud delete failed: $e"); // 如果离线，下次同步时云端仍会存在，但本地方案已足够
-    }
+    await _col().doc(imdbId).set({
+      'imdb_id': imdbId,
+      'title': title,
+      'poster': poster,
+      'genre': genre,
+      'rating': rating,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
-  // delete from favorites
- 
+  static Future<void> deleteFavorite(String imdbId) async {
+    await _col().doc(imdbId).delete();
+  }
 
-  // check if favorite
   static Future<bool> isFavorite(String imdbId) async {
-    final userId = UserDao.getCurrentUserId();
-    if (userId == null) throw Exception("Please login first");
-    final db = await AppDatabase.database;
-    final res = await db.query(
-      'favorites',
-      where: 'imdb_id = ? AND user_id = ?',
-      whereArgs: [imdbId, userId],
-    );
-    return res.isNotEmpty;
+    final doc = await _col().doc(imdbId).get();
+    return doc.exists;
   }
 
-  // read all favorites
   static Future<List<Map<String, dynamic>>> getAllFavorites() async {
-    final db = await AppDatabase.database;
-    final userId = UserDao.getCurrentUserId();
-    if (userId == null) {
-      return db.query('favorites');
-    } else {
-      return db.query('favorites', where: 'user_id = ?', whereArgs: [userId]);
-    }
+    final snap = await _col().get();
+    return snap.docs.map((d) => d.data()).toList();
   }
-  
+
+  static Stream<List<Map<String, dynamic>>> streamAllFavorites() {
+    return _col()
+        .orderBy('updatedAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => d.data()).toList());
+  }
+
   static Future<String?> getMostFrequentGenre() async {
-     final userId = UserDao.getCurrentUserId();
-    if (userId == null) throw Exception("Please login first");
-    
     final favorites = await getAllFavorites();
     if (favorites.isEmpty) return null;
-    Map<String, int> genreCounts = {};
 
-    for (var movie in favorites) {
-      String? genreStr = movie['genre']; 
-      if (genreStr != null && genreStr != "No Info" && genreStr.isNotEmpty) {
-        List<String> genres = genreStr.split(',').map((g) => g.trim()).toList();
-        for (var genre in genres) {
-          genreCounts[genre] = (genreCounts[genre] ?? 0) + 1;
-        }
+    final Map<String, int> counts = {};
+    for (final movie in favorites) {
+      final genreStr = movie['genre'] as String?;
+      if (genreStr == null || genreStr.isEmpty || genreStr == "No Info")
+        continue;
+
+      for (final g in genreStr.split(',').map((x) => x.trim())) {
+        if (g.isEmpty) continue;
+        counts[g] = (counts[g] ?? 0) + 1;
       }
     }
 
-    if (genreCounts.isEmpty) return null;
-    var mostFrequent = genreCounts.entries.reduce((a, b) => a.value > b.value ? a : b);
-
-    return mostFrequent.key;
-  }
-
-  static Future<void> syncWithFirebase() async {
-    final rawId = UserDao.getCurrentUserId();
-    if (rawId == null) throw Exception("Please login first");
-    final String userId = rawId.toString(); // 解决红线问题
-
-    final db = await AppDatabase.database;
-    final firestoreRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('favorites');
-
-    // A. 上传：把本地有的全部推给云端 (以本地为准更新)
-    final localData = await db.query('favorites', where: 'user_id = ?', whereArgs: [userId]);
-    for (var movie in localData) {
-      await firestoreRef.doc(movie['imdb_id'].toString()).set({
-        'imdb_id': movie['imdb_id'],
-        'title': movie['title'],
-        'poster': movie['poster'],
-        'genre': movie['genre'],
-        'rating': movie['rating'],
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    }
-
-    // B. 下载：把云端有的拉回本地 (保证新设备能找回数据)
-    final remoteSnapshot = await firestoreRef.get();
-    for (var doc in remoteSnapshot.docs) {
-      final data = doc.data();
-      await db.insert(
-        'favorites',
-        {
-          'user_id': userId,
-          'imdb_id': data['imdb_id'],
-          'title': data['title'],
-          'poster': data['poster'],
-          'genre': data['genre'],
-          'rating': data['rating'],
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
+    if (counts.isEmpty) return null;
+    return counts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
   }
 }

@@ -32,7 +32,7 @@ class _SplashPageState extends State<SplashPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.black, Color(0xFF1A1A1A)], 
+            colors: [Colors.black, Color(0xFF1A1A1A)],
           ),
         ),
         child: Column(
@@ -41,20 +41,20 @@ class _SplashPageState extends State<SplashPage> {
             // App Logo
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration( 
-                color: Colors.black, 
+              decoration: const BoxDecoration(
+                color: Colors.black,
                 shape: BoxShape.circle,
               ),
               child: Image.asset(
                 'assets/icon/icon.png', // App icon path
-                width: 90, 
+                width: 90,
                 height: 90,
                 fit: BoxFit.contain,
               ),
             ),
-            
+
             const SizedBox(height: 30),
-            
+
             // App Name
             const Text(
               "LumiList",
@@ -62,12 +62,12 @@ class _SplashPageState extends State<SplashPage> {
                 fontSize: 42,
                 fontWeight: FontWeight.w900,
                 color: Colors.white,
-                letterSpacing: 3, 
+                letterSpacing: 3,
               ),
             ),
-            
+
             const SizedBox(height: 10),
-            
+
             // Slogan part
             Text(
               "Your Movie Collection",
