@@ -29,19 +29,33 @@ class FavoriteDao {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-  }
-
-  // delete from favorites
-  static Future<void> deleteFavorite(String imdbId) async {
+  }static Future<void> deleteFavorite(String imdbId) async {
     final userId = UserDao.getCurrentUserId();
     if (userId == null) throw Exception("Please login first");
+
+    // 删除本地
     final db = await AppDatabase.database;
     await db.delete(
       'favorites',
       where: 'imdb_id = ? AND user_id = ?',
       whereArgs: [imdbId, userId],
     );
+
+    // 同步删除云端记录
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId.toString())
+          .collection('favorites')
+          .doc(imdbId)
+          .delete();
+    } catch (e) {
+      print("Cloud delete failed: $e"); // 如果离线，下次同步时云端仍会存在，但本地方案已足够
+    }
   }
+
+  // delete from favorites
+ 
 
   // check if favorite
   static Future<bool> isFavorite(String imdbId) async {
@@ -90,5 +104,47 @@ class FavoriteDao {
 
     return mostFrequent.key;
   }
-  static Future<void> syncWithFirebase() async{}
+
+  static Future<void> syncWithFirebase() async {
+    final rawId = UserDao.getCurrentUserId();
+    if (rawId == null) throw Exception("Please login first");
+    final String userId = rawId.toString(); // 解决红线问题
+
+    final db = await AppDatabase.database;
+    final firestoreRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('favorites');
+
+    // A. 上传：把本地有的全部推给云端 (以本地为准更新)
+    final localData = await db.query('favorites', where: 'user_id = ?', whereArgs: [userId]);
+    for (var movie in localData) {
+      await firestoreRef.doc(movie['imdb_id'].toString()).set({
+        'imdb_id': movie['imdb_id'],
+        'title': movie['title'],
+        'poster': movie['poster'],
+        'genre': movie['genre'],
+        'rating': movie['rating'],
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+
+    // B. 下载：把云端有的拉回本地 (保证新设备能找回数据)
+    final remoteSnapshot = await firestoreRef.get();
+    for (var doc in remoteSnapshot.docs) {
+      final data = doc.data();
+      await db.insert(
+        'favorites',
+        {
+          'user_id': userId,
+          'imdb_id': data['imdb_id'],
+          'title': data['title'],
+          'poster': data['poster'],
+          'genre': data['genre'],
+          'rating': data['rating'],
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
 }
