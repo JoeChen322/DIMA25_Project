@@ -16,8 +16,8 @@ LumiList is a modern, cross-platform movie marking and discovery application bui
     * **Favorites**: Heart your top picks to save them to your personal database.
     * **Watchlist**: Save movies to a "See Later" list with a single tap.
     * **Personal Ratings**: Rate movies you've watched to keep a record of your personal taste.
-* **Smart Recommendations**: Get suggestions for classic movies tailored to your specific taste.
-* **Adaptive UI**: Optimized layouts for both mobile phones and tablets, ensuring a seamless experience across different screen sizes.
+* **Recommendations System**: Get suggestions for classic movies tailored to your specific taste.
+* **Adaptive UI**: Optimized layouts for both mobile phones and tablets, ensuring a seamless experience across different screen sizes.Dark and Light modes with the system.
 
 ---
 
@@ -26,11 +26,11 @@ LumiList is a modern, cross-platform movie marking and discovery application bui
 The project follows a modular structure to separate data logic from the user interface:
 
 ### `/database`
-Defines the local data persistence layer using **SQLite**:
-* **`app_database`**: Core database configuration and initialization.
+Defines the local data persistence layer using **Firebase** , achieve real-time update and synchronous across devices:
+* **`user`**: Info of the users email, password, username and profile.
 * **`favorite`**: Manages movies marked with the ❤ button.
 * **`personal_rating`**: Stores movies with user-assigned scores.
-* **`see_later`**: Manages the "Watch Later" queue.
+* **`see_later`**: Manages the "Watch Later" list.
 
 ### `/pages`
 Contains the primary application screens and business logic:
@@ -45,9 +45,8 @@ Contains the primary application screens and business logic:
 ## 🛠️ Technical Stack
 
 * **Framework**: Flutter (SDK 3.3.0+)
-* **State Management**: `provider`
 * **Networking**: `dio` for API interactions
-* **Database**: `sqflite` for local data persistence
+* **Database**: `Firebase` for cloud data persistence
 * **Assets**: Custom icons and launcher configurations for Android/iOS
 
 ---
@@ -65,11 +64,10 @@ Contains the primary application screens and business logic:
 
 ---
 
-## 📝 Roadmap (TODO)
+## 📝 Future Work
 
 - [ ] Support searching by actors or movie genres.
-- [ ] Implement Light and Dark mode switching.
-- [ ] Adaptive landscape mode for the main page.
+- [ ] Perfect recommand system.
 - [ ] Enhanced search relevance sorting.
 
 ---
