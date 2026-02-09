@@ -47,6 +47,8 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_launcher_icons: ^0.13.1  # <--- 添加这一行
 
 
@@ -107,16 +109,12 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  # 1. 必须提供这个作为基础路径，插件才不会报错
   image_path: "assets/icon/icon.png" 
   
-  # 2. iOS 专用路径（指向你原本的黑底白L）
   image_path_ios: "assets/icon/icon.png"
 
-  # 3. Android 专用路径（指向你的白底黑L）
   image_path_android: "assets/icon/icon_android.png"
 
-  # 4. Android 自适应图标配置（解决圆圈适配的关键）
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/icon/icon_android.png"
   

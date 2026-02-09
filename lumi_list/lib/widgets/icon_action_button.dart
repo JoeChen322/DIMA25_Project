@@ -28,7 +28,7 @@ class MovieActionButton extends StatelessWidget {
         ),
         child: Wrap(
           alignment: WrapAlignment.center,
-          runAlignment: WrapAlignment.center,
+          runAlignment: WrapAlignment. center,
           children: [
             Icon(icon, color: iconColor, size: 22),
             const SizedBox(width: 4),
