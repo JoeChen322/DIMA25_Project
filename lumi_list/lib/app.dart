@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'route.dart';
 
 class LumiListApp extends StatelessWidget {
-  const LumiListApp({super.key});
+  final String initialRoute; // 定义参数
+
+  const LumiListApp({super.key, required this.initialRoute}); // 构造函数接收
 
   @override
   Widget build(BuildContext context) {
@@ -12,12 +14,10 @@ class LumiListApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-
-      // Set initial route and define routes
-      initialRoute: '/splash',
+      
+      // 使用传进来的初始路由，覆盖掉原本硬编码的 '/splash'
+      initialRoute: initialRoute, 
       routes: appRoutes,
-
-  
     );
   }
 }

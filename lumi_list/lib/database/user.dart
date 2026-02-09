@@ -7,15 +7,16 @@ import 'app_database.dart';
 
 class UserDao {
   static int? _currentUserId;
+  static String? _currentUserEmail;
 
-  static void setCurrentUser(int id) {
+  static void setCurrentUser(int id, String email) {
     _currentUserId = id;
+    _currentUserEmail = email; 
   }
 
   
-  static int? getCurrentUserId() {
-    return _currentUserId; 
-  }
+  static int? getCurrentUserId() => _currentUserId;
+  static String? getCurrentUserEmail() => _currentUserEmail;
 
   // register
   static Future<int> registerUser(String email, String password, String username) async {
@@ -48,7 +49,8 @@ class UserDao {
 
     if (maps.isNotEmpty) { 
       int id = maps.first['id'] as int;
-      setCurrentUser(id); 
+      String userEmail = maps.first['email'] as String;
+      setCurrentUser(id,userEmail); 
       return maps.first;  
     }
     return null;

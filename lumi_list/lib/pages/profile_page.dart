@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lumi_list/database/app_database.dart';
 import 'package:lumi_list/database/user.dart';
+import 'package:lumi_list/services/auth_service.dart'; 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -181,13 +182,18 @@ Future<void> _loadDataFromDb() async {
                       SizedBox(
                         width: double.infinity,
                         child: TextButton.icon(
-                          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false),
+                          onPressed: () async {
+                            await AuthService.clearToken();
+
+                            if (!context.mounted) return;
+                            Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                          },
                           icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
                           label: const Text("Log Out", style: TextStyle(color: Colors.redAccent, fontSize: 16)),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             backgroundColor: Colors.redAccent.withOpacity(0.1),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                           ),
                         ),
                       ),

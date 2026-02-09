@@ -9,6 +9,7 @@ class SeeLaterDao {
     required String poster,
   }) async {
      final userId = UserDao.getCurrentUserId();
+    
     if (userId == null) throw Exception("Please login first");
 
     final db = await AppDatabase.database;
@@ -27,9 +28,10 @@ class SeeLaterDao {
   //delete
  static Future<void> deleteSeeLater(String imdbId) async {
   final userId = UserDao.getCurrentUserId();
+  final userEmail = UserDao.getCurrentUserEmail();
   if (userId == null) throw Exception("Please login first");
 
-  // 1. 删除本地
+  // delete from local database
   final db = await AppDatabase.database;
   await db.delete(
     'see_later',
@@ -37,17 +39,17 @@ class SeeLaterDao {
     whereArgs: [imdbId, userId],
   );
 
-  // 2. 同时尝试删除云端 (这样同步时它就不会再回来了)
+  // delete from cloud
   try {
     await FirebaseFirestore.instance
         .collection('users')
-        .doc(userId.toString())
+        .doc(userEmail)
         .collection('watch_later')
         .doc(imdbId)
         .delete();
   } catch (e) {
     print("Cloud delete failed (possibly offline): $e");
-    // 即使失败也没关系，Firestore 会在下次联网时处理，或者我们通过同步逻辑处理
+    
   }
 }
 
@@ -75,18 +77,20 @@ class SeeLaterDao {
       whereArgs: [userId],
     );
   }
-
+ 
+ // sync with firebase 
   static Future<void> syncWithFirebase() async {
   final userId = UserDao.getCurrentUserId();
+  final userEmail = UserDao.getCurrentUserEmail();
   if (userId == null) throw Exception("Please login first");
 
   final db = await AppDatabase.database;
   final firestoreRef = FirebaseFirestore.instance
       .collection('users')
-      .doc(userId.toString())
+      .doc(userEmail)
       .collection('watch_later');
 
-  // --- 步骤 A：本地上传到云端 (Upsert) ---
+  // --- upload local to cloud (Merge) ---
   final localData = await db.query('see_later', where: 'user_id = ?', whereArgs: [userId]);
   for (var movie in localData) {
     await firestoreRef.doc(movie['imdb_id'].toString()).set({
@@ -97,7 +101,7 @@ class SeeLaterDao {
     }, SetOptions(merge: true));
   }
 
-  // --- 步骤 B：云端拉取到本地 (Merge) ---
+  // --- download and merge ---
   final remoteSnapshot = await firestoreRef.get();
   for (var doc in remoteSnapshot.docs) {
     final data = doc.data();

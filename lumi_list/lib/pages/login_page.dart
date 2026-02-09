@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../database/user.dart';
-//database
 import 'package:lumi_list/database/app_database.dart';
-
+import '../services/auth_service.dart'; 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -35,10 +34,10 @@ class _LoginPageState extends State<LoginPage> {
 
   try {
     final user = await UserDao.login(_emailController.text, _passwordController.text);
-
     if (user != null) {
+      await AuthService.saveToken(user['email']?.toString() ?? '');
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/'); 
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     } else {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
