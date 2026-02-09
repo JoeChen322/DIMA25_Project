@@ -85,8 +85,12 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F), // dark background
+      backgroundColor: colorScheme.surface, // dark background
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
@@ -99,7 +103,7 @@ class _SearchPageState extends State<SearchPage> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.deepPurple.withOpacity(0.15),
+                color: colorScheme.primary.withOpacity(isDark ? 0.15 : 0.08),
               ),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
@@ -118,10 +122,10 @@ class _SearchPageState extends State<SearchPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Search",
                         style: TextStyle(
-                          color: Colors.white,
+                          color: colorScheme.onSurface,
                           fontSize: 34,
                           fontWeight: FontWeight.bold,
                           letterSpacing: -1,
@@ -129,7 +133,7 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                       Text(
                         "Find your next story",
-                        style: TextStyle(color: Colors.grey[500], fontSize: 16),
+                        style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16),
                       ),
                     ],
                   ),
@@ -140,20 +144,20 @@ class _SearchPageState extends State<SearchPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
+                      color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      border: Border.all(color: colorScheme.outlineVariant),
                     ),
                     child: TextField(
                       controller: _controller,
                       onSubmitted: (_) => _search(),
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: colorScheme.onSurface),
                       decoration: InputDecoration(
                         hintText: "Enter movie name...",
-                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                         prefixIcon: const Icon(Icons.search_rounded, color: Colors.deepPurpleAccent),
                         suffixIcon: IconButton(
-                          icon: const Icon(Icons.send_rounded, color: Colors.white),
+                          icon: Icon(Icons.send_rounded, color: colorScheme.onSurfaceVariant),
                           onPressed: _search,
                         ),
                         border: InputBorder.none,
@@ -178,9 +182,9 @@ class _SearchPageState extends State<SearchPage> {
                               padding: const EdgeInsets.symmetric(horizontal: 10.0), 
                               child: Row(
                                 children: [
-                                  const Text(
+                                  Text(
                                     "Guess Your Favourite Category: ",
-                                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                                    style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14),
                                   ),
                                   const SizedBox(width: 8),
                                   GestureDetector(
@@ -198,8 +202,8 @@ class _SearchPageState extends State<SearchPage> {
                                     },
                                     child: Text(
                                       _favoriteGenre!,
-                                      style: const TextStyle(
-                                        color: Colors.deepPurpleAccent,
+                                      style: TextStyle(
+                                        color: colorScheme.primary,
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                         decoration: TextDecoration.underline, 
@@ -212,7 +216,7 @@ class _SearchPageState extends State<SearchPage> {
                           const SizedBox(height: 10), 
                         ],
                           const SizedBox(height: 40),
-                          const Text("Browse Categories", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text("Browse Categories", style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 18, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 15),
                           GridView.count(
                             shrinkWrap: true,
@@ -223,12 +227,12 @@ class _SearchPageState extends State<SearchPage> {
                             mainAxisSpacing: 12,
                             crossAxisSpacing: 12,
                             children: [
-                              _buildCategoryCard("Action", Colors.orangeAccent),
-                              _buildCategoryCard("Fiction", Colors.blueAccent),
-                              _buildCategoryCard("Horror", Colors.redAccent),
-                              _buildCategoryCard("Comedy", Colors.greenAccent),
-                              _buildCategoryCard("Drama",  Colors.yellowAccent),
-                              _buildCategoryCard("Romance", Colors.purpleAccent),
+                              _buildCategoryCard("Action", Colors.orangeAccent, isDark),
+                              _buildCategoryCard("Fiction", Colors.blueAccent, isDark),
+                              _buildCategoryCard("Horror", Colors.redAccent, isDark),
+                              _buildCategoryCard("Comedy", Colors.greenAccent, isDark),
+                              _buildCategoryCard("Drama",  Colors.yellowAccent, isDark),
+                              _buildCategoryCard("Romance", Colors.purpleAccent, isDark),
                             ],
                           ),
                           const SizedBox(height: 00),
@@ -240,7 +244,7 @@ class _SearchPageState extends State<SearchPage> {
 
                 // loading indicator
                 if (_isLoading)
-                  const Expanded(child: Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))),
+                  Expanded(child: Center(child: CircularProgressIndicator(color: colorScheme.primary))),
 
                 //error message
                 if (_errorMessage != null)
@@ -253,7 +257,7 @@ class _SearchPageState extends State<SearchPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: _movies.length,
                       itemBuilder: (context, index) {
-                        return _buildMovieCard(_movies[index]);
+                        return _buildMovieCard(_movies[index], colorScheme);
                       },
                     ),
                   ),
@@ -266,7 +270,7 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   // mobvie card widget
-  Widget _buildMovieCard(dynamic movie) {
+  Widget _buildMovieCard(dynamic movie, ColorScheme colorScheme) {
     final String title = movie["title"] ?? "Untitled";
     final String year = movie["release_date"]?.split('-')[0] ?? "N/A";
     final String? posterPath = movie["poster_path"];
@@ -294,7 +298,7 @@ class _SearchPageState extends State<SearchPage> {
         margin: const EdgeInsets.only(bottom: 16),
         height: 120,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: colorScheme.onSurfaceVariant.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -308,7 +312,7 @@ class _SearchPageState extends State<SearchPage> {
                       height: 120,
                       fit: BoxFit.cover,
                     )
-                  : Container(width: 85, color: Colors.grey[800], child: const Icon(Icons.movie, color: Colors.white)),
+                  : Container(width: 85, color:colorScheme.surfaceContainerHighest, child: Icon(Icons.movie, color: colorScheme.onSurfaceVariant)),
             ),
             Expanded(
               child: Padding(
@@ -321,15 +325,15 @@ class _SearchPageState extends State<SearchPage> {
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    Text(year, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                    Text(year, style: TextStyle(color: colorScheme.onSurfaceVariant.withOpacity(0.7), fontSize: 14)),
                   ],
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant),
             const SizedBox(width: 10),
           ],
         ),
@@ -355,7 +359,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-Widget _buildCategoryCard(String title, Color color) {
+Widget _buildCategoryCard(String title, Color color, bool isDark) {
   return GestureDetector( 
     onTap: () {
       Navigator.push(
@@ -378,8 +382,8 @@ Widget _buildCategoryCard(String title, Color color) {
       child: Center( // 
         child: Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),

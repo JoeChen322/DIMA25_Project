@@ -93,8 +93,12 @@ Future<void> _loadDataFromDb() async {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
           Positioned(
@@ -105,7 +109,7 @@ Future<void> _loadDataFromDb() async {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.deepPurple.withOpacity(0.15),
+                color: colorScheme.primary.withOpacity(isDark ? 0.2 : 0.05),
               ),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 70, sigmaY: 70),
@@ -116,7 +120,7 @@ Future<void> _loadDataFromDb() async {
           
           SafeArea(
             child: _isLoading 
-              ? const Center(child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
+              ? Center(child: CircularProgressIndicator(color: colorScheme.primary))
               : SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
@@ -126,7 +130,7 @@ Future<void> _loadDataFromDb() async {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                            icon: Icon(Icons.arrow_back_ios_new_rounded, color: colorScheme.onSurface, size: 20),
                             onPressed: () => Navigator.pop(context),
                           ),
                           const Text(
@@ -134,7 +138,7 @@ Future<void> _loadDataFromDb() async {
                             style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.edit_note_rounded, color: Colors.deepPurpleAccent, size: 28),
+                            icon: Icon(Icons.edit_note_rounded, color: colorScheme.primary, size: 28),
                             onPressed: _navigateToEdit,
                           ),
                         ],
@@ -148,16 +152,16 @@ Future<void> _loadDataFromDb() async {
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.deepPurpleAccent.withOpacity(0.5), width: 2),
+                            border: Border.all(color: colorScheme.primary.withOpacity(0.5), width: 2),
                           ),
                           child: CircleAvatar(
                             radius: 60,
-                            backgroundColor: Colors.white.withOpacity(0.05),
+                            backgroundColor: colorScheme.surfaceContainerHighest,
                             backgroundImage: (_avatarPath != null && _avatarPath!.isNotEmpty) 
                                 ? FileImage(File(_avatarPath!)) 
                                 : null,
                             child: (_avatarPath == null || _avatarPath!.isEmpty)
-                                ? const Icon(Icons.person_rounded, size: 60, color: Colors.white24) 
+                                ? Icon(Icons.person_rounded, size: 60, color: colorScheme.onSurfaceVariant.withOpacity(0.5)) 
                                 : null,
                           ),
                         ),
@@ -165,15 +169,15 @@ Future<void> _loadDataFromDb() async {
 
                       const SizedBox(height: 20),
 
-                      Text(_name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      Text(_name, style: TextStyle(color: colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      Text(_bio, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white54, fontSize: 14)),
+                      Text(_bio, textAlign: TextAlign.center, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 14)),
 
                       const SizedBox(height: 40),
 
                       // list tiles
-                      _buildDarkInfoTile("Email", _email ?? "N/A", Icons.email_rounded),
-                      _buildDarkInfoTile("Phone", _phone, Icons.phone_iphone_rounded),
+                      _buildDarkInfoTile("Email", _email ?? "N/A", Icons.email_rounded, colorScheme, isDark),
+                      _buildDarkInfoTile("Phone", _phone, Icons.phone_iphone_rounded, colorScheme, isDark),
                       
                       const SizedBox(height: 50),
                       
@@ -182,11 +186,11 @@ Future<void> _loadDataFromDb() async {
                         width: double.infinity,
                         child: TextButton.icon(
                           onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false),
-                          icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
+                          icon: Icon(Icons.logout_rounded, color: colorScheme.error, size: 20),
                           label: const Text("Log Out", style: TextStyle(color: Colors.redAccent, fontSize: 16)),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            backgroundColor: Colors.redAccent.withOpacity(0.1),
+                            backgroundColor: colorScheme.error.withOpacity(isDark ? 0.1 : 0.05),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
                           ),
                         ),
@@ -200,30 +204,30 @@ Future<void> _loadDataFromDb() async {
     );
   }
 
-  Widget _buildDarkInfoTile(String label, String value, IconData icon) {
+  Widget _buildDarkInfoTile(String label, String value, IconData icon, ColorScheme colorScheme, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.deepPurpleAccent.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.deepPurpleAccent, size: 22),
+            decoration: BoxDecoration(color: colorScheme.primary.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: colorScheme.primary, size: 22),
           ),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                Text(label, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12)),
                 const SizedBox(height: 4),
-                Text(value, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+                Text(value, style: TextStyle(color: colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w500)),
               ],
             ),
           ),

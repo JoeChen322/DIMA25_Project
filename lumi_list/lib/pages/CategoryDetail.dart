@@ -8,14 +8,18 @@ class CategoryDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final List<Map<String, String>> movies = MovieCategoryData.categories[category] ?? [];
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: Text("$category Top 5", style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text("$category Top 5", style: TextStyle(color: colorScheme.onSurface)),
+        backgroundColor: colorScheme.surface,
+        iconTheme: IconThemeData(color: colorScheme.onSurface),
+        elevation: 0,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -40,8 +44,9 @@ class CategoryDetailPage extends StatelessWidget {
               margin: const EdgeInsets.symmetric(vertical: 8),
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
               ),
               child: Row(
                 children: [
@@ -51,8 +56,9 @@ class CategoryDetailPage extends StatelessWidget {
                       movie['poster']!,
                       width: 85, height: 120, fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
-                        width: 85, color: Colors.grey[850],
-                        child: const Icon(Icons.broken_image, color: Colors.white24),
+                        width: 85, 
+                        color: colorScheme.surfaceContainerHighest,
+                        child: Icon(Icons.broken_image, color: colorScheme.onSurfaceVariant),
                       ),
                     ),
                   ),
@@ -65,17 +71,17 @@ class CategoryDetailPage extends StatelessWidget {
                         children: [
                           Text(
                             movie['title']!,
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 5),
-                          Text("${movie['year'] ?? 'Unknown Year'} - ${movie['director'] ?? 'NA'}", style: const TextStyle(color: Colors.amber, fontSize: 12)),
+                          Text("${movie['year'] ?? 'Unknown Year'} - ${movie['director'] ?? 'NA'}", style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12)),
                         ],
                       ),
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: Colors.white30),
+                  Icon(Icons.chevron_right, color: colorScheme.onSurfaceVariant.withOpacity(0.5)),
                   const SizedBox(width: 8),
                 ],
               ),

@@ -43,31 +43,35 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: const Text("Watch Later", 
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         // --- sys button ---
         actions: [
           _isSyncing
-              ? const Center(
+              ? Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: SizedBox(
                       width: 20, height: 20, 
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+                      child: CircularProgressIndicator(strokeWidth: 2, color: colorScheme.primary)
                     ),
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.sync, color: Colors.white),
+                  icon: Icon(Icons.sync, color: colorScheme.onSurface),
+
                   onPressed: _handleSync,
                 ),
         ],
@@ -76,11 +80,11 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
         future: SeeLaterDao.getSeeLaterMovies(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator(color: colorScheme.primary));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text("Your list is empty", style: TextStyle(color: Colors.grey)),
+            return Center(
+              child: Text("Your list is empty", style: TextStyle(color: colorScheme.onSurfaceVariant)),
             );
           }
 
@@ -93,8 +97,9 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(8),
@@ -105,18 +110,18 @@ class _SeeLaterPageState extends State<SeeLaterPage> {
                       width: 60, height: 90,
                       fit: BoxFit.cover,
                       errorBuilder: (context, e, s) => 
-                          Container(width: 60, height: 90, color: Colors.grey),
+                          Container(width: 60, height: 90, color: colorScheme.surfaceContainerHighest, child: Icon(Icons.broken_image, color: colorScheme.onSurfaceVariant)),
                     ),
                   ),
                   title: Text(
                     movie['title'] ?? "Unknown",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
                     movie['year'] ?? "",
-                    style: const TextStyle(color: Colors.grey),
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 16),
+                  trailing: Icon(Icons.arrow_forward_ios, color: colorScheme.onSurfaceVariant, size: 16),
                   onTap: () {
                     Navigator.push(
                       context,

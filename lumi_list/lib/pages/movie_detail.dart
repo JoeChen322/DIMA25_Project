@@ -151,19 +151,27 @@ void _showRatingDialog() {
     context: context,
     builder: (context) => AlertDialog(
       title: const Text("Rate this Movie"),
-      content: Wrap(
-        //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        alignment: WrapAlignment.center,
-        children: List.generate(5, (index) => IconButton(
-          icon: Icon(
-            Icons.star, 
-            color: (userRating ?? 0) > index ? Colors.amber : Colors.grey
-          ),
-          onPressed: () async {
-            int newScore = index + 1;
-            //store the new rating in the database
-            if (realImdbId != null) {
-              await PersonalRateDao.insertOrUpdateRate(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children:[
+          const SizedBox(height: 10),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) => IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                Icons.star, 
+                size: 45,
+                color: (userRating ?? 0) > index ? Colors.amber : Colors.grey
+             ),
+             onPressed: () async {
+               int newScore = index + 1;
+              //store the new rating in the database
+               if (realImdbId != null) {
+                await PersonalRateDao.insertOrUpdateRate(
                 imdbId: realImdbId!,
                 title: widget.movie['Title'] ?? "Unknown",
                 rating: newScore,
@@ -178,11 +186,17 @@ void _showRatingDialog() {
         )),
       ),
     ),
+  ],
+      ),
+    ),
   );
 }
 
   @override
 Widget build(BuildContext context) {
+  final theme = Theme.of(context);
+  final colorScheme = theme.colorScheme;
+  final isDark = theme.brightness == Brightness.dark;
   // 1. Detect orientation
   final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
   final screenWidth = MediaQuery.of(context).size.width;
@@ -210,8 +224,8 @@ Widget build(BuildContext context) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("${widget.movie['Title']} ($_year)", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-        Text("——$_director", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text("${widget.movie['Title']} ($_year)", style:  TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+        Text("——$_director", style:  TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colorScheme.onSurfaceVariant)),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -222,7 +236,7 @@ Widget build(BuildContext context) {
           ],
         ),
         const SizedBox(height: 20),
-        const Text("Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text("Summary", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
         const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -235,7 +249,7 @@ Widget build(BuildContext context) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_plot ?? "No summary available.", maxLines: _isExpanded ? null : 3, overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis, style: const TextStyle(color: Color.fromARGB(255, 215, 214, 214), fontSize: 16)),
+                  Text(_plot ?? "No summary available.", maxLines: _isExpanded ? null : 3, overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis, style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16)),
                   if (isExceeding) Align(alignment: Alignment.centerRight, child: Padding(padding: const EdgeInsets.only(top: 4.0), child: Text(_isExpanded ? "Fold" : "More...", style: const TextStyle(color: Colors.deepPurpleAccent, fontWeight: FontWeight.bold, fontSize: 14)))),
                 ],
               ),
@@ -243,20 +257,20 @@ Widget build(BuildContext context) {
           },
         ),
         const SizedBox(height: 20),
-        if (genreList.isNotEmpty) Wrap(alignment: WrapAlignment.center, spacing: 8.0, runSpacing: 4.0, children: genreList.map((genre) => Chip(label: Text(genre, style: const TextStyle(color: Colors.white, fontSize: 12)), backgroundColor: const Color.fromARGB(255, 87, 33, 235).withOpacity(0.3), side: BorderSide(color: const Color.fromARGB(255, 95, 47, 225).withOpacity(0.5)), padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0), visualDensity: VisualDensity.compact)).toList()),
+        if (genreList.isNotEmpty) Wrap(alignment: WrapAlignment.center, spacing: 8.0, runSpacing: 4.0, children: genreList.map((genre) => Chip(label: Text(genre, style: TextStyle(color: colorScheme.onPrimaryContainer, fontSize: 12)), backgroundColor: const Color.fromARGB(255, 87, 33, 235).withOpacity(0.3), side: BorderSide(color: const Color.fromARGB(255, 95, 47, 225).withOpacity(0.5)), padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0), visualDensity: VisualDensity.compact)).toList()),
         if (genreList.isNotEmpty) const SizedBox(height: 20),
-        const Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text("Cast", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
         const SizedBox(height: 10),
         isLoadingCast ? const Center(child: CircularProgressIndicator()) : CastStrip(cast: cast),
         const SizedBox(height: 30),
-        Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(12)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text("Ratings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)), const SizedBox(height: 12), _buildRatingLine("IMDb", imdb), _buildRatingLine("Rotten Tomatoes", rotten), _buildRatingLine("Metascore", meta)])),
+        Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest.withOpacity(0.3), borderRadius: BorderRadius.circular(12)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Ratings", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onSurface)), const SizedBox(height: 12), _buildRatingLine("IMDb", imdb, colorScheme), _buildRatingLine("Rotten Tomatoes", rotten, colorScheme), _buildRatingLine("Metascore", meta, colorScheme)])),
         const SizedBox(height: 50),
       ],
     ),
   );
 
   return Scaffold(
-    backgroundColor: Colors.black,
+    backgroundColor: colorScheme.surface,
     body: isLandscape
         ? Row(
             children: [
@@ -293,14 +307,14 @@ Widget build(BuildContext context) {
   );
 }
   
-  Widget _buildRatingLine(String platform, String score) {
+  Widget _buildRatingLine(String platform, String score, ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Wrap(
-        alignment: WrapAlignment.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(platform, style: const TextStyle(color: Colors.white70)),
-          Text(score, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+          Text(platform, style: TextStyle(color: colorScheme.onSurfaceVariant)),
+          Text(score, style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
         ],
       ),
     );

@@ -57,8 +57,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+      final theme = Theme.of(context);
+      final colorScheme = theme.colorScheme;
+      final isDark = theme.brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F), 
+      backgroundColor: colorScheme.surface,
       body: Stack(
         children: [
           Positioned(
@@ -69,7 +72,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.deepPurple.withOpacity(0.15),
+                color: colorScheme.primary.withOpacity(isDark ? 0.2 : 0.05) ,
               ),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 70, sigmaY: 70),
@@ -89,11 +92,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text("Cancel", style: TextStyle(color: Colors.white60, fontSize: 16)),
+                        child: Text("Cancel", style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 16)),
                       ),
-                      const Text(
+                      Text(
                         "Edit Profile",
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       TextButton(
                         onPressed: () {
@@ -104,7 +107,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             'avatar': _selectedImage?.path,
                           });
                         },
-                        child: const Text("Done", style: TextStyle(color: Colors.deepPurpleAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+                        child: Text("Done", style: TextStyle(color: colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -126,14 +129,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   padding: const EdgeInsets.all(4),
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                                    border: Border.all(color: colorScheme.outlineVariant, width: 1),
                                   ),
                                   child: CircleAvatar(
                                     radius: 60,
-                                    backgroundColor: Colors.white.withOpacity(0.05),
+                                    backgroundColor: colorScheme.surfaceContainerHighest,
                                     backgroundImage: _selectedImage != null ? FileImage(_selectedImage!) : null,
                                     child: _selectedImage == null 
-                                        ? const Icon(Icons.person_rounded, size: 60, color: Colors.white24) 
+                                        ? Icon(Icons.person_rounded, size: 60, color: colorScheme.onSurfaceVariant.withOpacity(0.5)) 
                                         : null,
                                   ),
                                 ),
@@ -142,11 +145,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                   right: 4,
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.deepPurpleAccent,
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.primary.withOpacity(0.8),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
+                                    child: Icon(Icons.camera_alt_rounded, size: 20, color: colorScheme.onSurface),
                                   ),
                                 ),
                               ],
@@ -157,17 +160,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         const SizedBox(height: 50),
 
                         // Input fields
-                        _buildGlassTextField("Username", _nameController, Icons.person_outline_rounded),
+                        _buildGlassTextField("Username", _nameController, Icons.person_outline_rounded, colorScheme, isDark),
                         const SizedBox(height: 20),
-                        _buildGlassTextField("Bio", _bioController, Icons.info_outline_rounded, maxLines: 3),
+                        _buildGlassTextField("Bio", _bioController, Icons.info_outline_rounded, colorScheme, isDark, maxLines: 3),
                         const SizedBox(height: 20),
-                        _buildGlassTextField("Phone", _phoneController, Icons.phone_android_rounded),
+                        _buildGlassTextField("Phone", _phoneController, Icons.phone_android_rounded, colorScheme, isDark),
                         
                         const SizedBox(height: 20),
                         if (_email != null)
                           Text(
                             "Account: $_email",
-                            style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                            style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
                           ),
                       ],
                     ),
@@ -181,27 +184,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildGlassTextField(String label, TextEditingController controller, IconData icon, {int maxLines = 1}) {
+  Widget _buildGlassTextField(String label, TextEditingController controller, IconData icon, ColorScheme colorScheme, bool isDark, {int maxLines = 1}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 10, bottom: 8),
-          child: Text(label, style: const TextStyle(color: Colors.white38, fontSize: 13, fontWeight: FontWeight.w500)),
+          child: Text(label, style: TextStyle(color: colorScheme.onSurfaceVariant.withOpacity(0.7), fontSize: 13, fontWeight: FontWeight.w500)),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05), //semi-transparent background
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.08)), // border
+            border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)), // border
           ),
           child: TextField(
             controller: controller,
             maxLines: maxLines,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-            cursorColor: Colors.deepPurpleAccent,
+            style: TextStyle(color: colorScheme.onSurface, fontSize: 15),
+            cursorColor: colorScheme.primary,
             decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: Colors.deepPurpleAccent.withOpacity(0.8), size: 22),
+              prefixIcon: Icon(icon, color: colorScheme.primary.withOpacity(0.8), size: 22),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             ),

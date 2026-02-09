@@ -54,24 +54,27 @@ class _ClassicsPageState extends State<ClassicsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        // 👈 建议修改标题，让用户知道是 Top 50
-        title: const Text("IMDb Top 50", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text("IMDb Top 50", style: TextStyle(fontWeight: FontWeight.bold, color:colorScheme.onSurface)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        // 使用你之前喜欢的半透明圆圈返回按钮样式
+        centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: GestureDetector(
             onTap: () => Navigator.pop(context),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+              child: Icon(Icons.arrow_back_ios_new_rounded, color: colorScheme.onSurface, size: 18),
             ),
           ),
         ),
@@ -84,7 +87,7 @@ class _ClassicsPageState extends State<ClassicsPage> {
               itemCount: _topMovies.length,
               itemBuilder: (context, index) {
                 final movie = _topMovies[index];
-                return _buildMovieItem(movie, index + 1);
+                return _buildMovieItem(movie, index + 1, colorScheme, isDark);
               },
             ),
     );
@@ -92,7 +95,7 @@ class _ClassicsPageState extends State<ClassicsPage> {
 
   // _buildMovieItem 部分保持不变 ...
 
-  Widget _buildMovieItem(dynamic movie, int rank) {
+  Widget _buildMovieItem(dynamic movie, int rank, ColorScheme colorScheme, bool isDark) {
     return GestureDetector(
       onTap: () {
         final formattedMovie = {
@@ -118,8 +121,9 @@ class _ClassicsPageState extends State<ClassicsPage> {
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
         ),
         child: Row(
           children: [
@@ -141,8 +145,8 @@ class _ClassicsPageState extends State<ClassicsPage> {
                 height: 90,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  width: 60, height: 90, color: Colors.grey[900], 
-                  child: const Icon(Icons.movie, color: Colors.grey)
+                  width: 60, height: 90, color: colorScheme.surfaceContainerHighest, 
+                  child: Icon(Icons.movie, color: colorScheme.onSurfaceVariant)
                 ),
               ),
             ),
@@ -153,7 +157,7 @@ class _ClassicsPageState extends State<ClassicsPage> {
                 children: [
                   Text(
                     movie["title"] ?? "Unknown", 
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold), 
+                    style: TextStyle(color: colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold), 
                     maxLines: 1, 
                     overflow: TextOverflow.ellipsis
                   ),
@@ -162,14 +166,14 @@ class _ClassicsPageState extends State<ClassicsPage> {
                     (movie["release_date"] != null && movie["release_date"].toString().length >= 4)
                         ? movie["release_date"].split('-')[0]
                         : "N/A", 
-                    style: const TextStyle(color: Colors.grey)
+                    style: TextStyle(color: colorScheme.onSurfaceVariant)
                   ),
                   const SizedBox(height: 5),
                   
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 16),
+            Icon(Icons.arrow_forward_ios, color: colorScheme.onSurfaceVariant.withOpacity(0.3), size: 16),
           ],
         ),
       ),

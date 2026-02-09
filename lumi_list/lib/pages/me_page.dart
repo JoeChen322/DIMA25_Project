@@ -10,8 +10,12 @@ class MyListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F), 
+      backgroundColor: colorScheme.surface, 
       body: Stack(
         children: [
           Positioned(
@@ -22,7 +26,7 @@ class MyListPage extends StatelessWidget {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.deepPurple.withOpacity(0.1),
+                color: colorScheme.primary.withOpacity(isDark ? 0.2 : 0.05),
               ),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
@@ -36,12 +40,12 @@ class MyListPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                     child: Text(
                       "ME",
                       style: TextStyle(
-                        color: Colors.white, 
+                        color: colorScheme.onSurface, 
                         fontSize: 34, 
                         fontWeight: FontWeight.bold,
                         letterSpacing: -1,
@@ -49,12 +53,12 @@ class MyListPage extends StatelessWidget {
                     ),
                   ),
                   
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 10, 20, 20),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                     child: Text(
                       "My Movie Lists",
                       style: TextStyle(
-                        color: Colors.grey, 
+                        color: colorScheme.onSurfaceVariant, 
                         fontSize: 18, 
                         fontWeight: FontWeight.w500
                       ),
@@ -78,13 +82,13 @@ class MyListPage extends StatelessWidget {
                             MaterialPageRoute(builder: (context) => const FavoritePage()),
                           );
                         },
-                        child: _buildDarkItem(context, Colors.amber, "Favorites", Icons.star_rounded),
+                        child: _buildDarkItem(context, Colors.amber, "Favorites", Icons.star_rounded, colorScheme, isDark),
                       ),
                       
                       // ----------Watch Later ---------------
                       GestureDetector(
                         onTap: () => Navigator.pushNamed(context, '/seelater'),
-                        child: _buildDarkItem(context, Colors.redAccent, "Watch Later", Icons.access_time_filled_rounded),
+                        child: _buildDarkItem(context, Colors.redAccent, "Watch Later", Icons.access_time_filled_rounded, colorScheme, isDark),
                       ),
                       
                       //------------- IMDb Classics----------------
@@ -95,7 +99,7 @@ class MyListPage extends StatelessWidget {
                              MaterialPageRoute(builder: (context) => const ClassicsPage()),
                             );
                        },
-                       child: _buildDarkItem(context, Colors.blueAccent, "IMDb Classics", Icons.movie_filter_rounded),
+                       child: _buildDarkItem(context, Colors.blueAccent, "IMDb Classics", Icons.movie_filter_rounded, colorScheme, isDark),
                       ),
 
                       // -----------------My Profile------------
@@ -117,7 +121,9 @@ class MyListPage extends StatelessWidget {
                           context, 
                           const Color(0xFF00E5FF), 
                           "My Profile", 
-                          Icons.person_rounded 
+                          Icons.person_rounded,
+                          colorScheme,
+                          isDark,
                         ),
                       ),
                     ],
@@ -131,12 +137,12 @@ class MyListPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDarkItem(BuildContext context, Color color, String title, IconData icon) {
+  Widget _buildDarkItem(BuildContext context, Color color, String title, IconData icon, ColorScheme colorScheme, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05), 
+        color: isDark ? color.withOpacity(0.05) : Colors.black.withOpacity(0.04), 
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.1)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -152,8 +158,8 @@ class MyListPage extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white, 
+            style: TextStyle(
+              color: colorScheme.onSurface, 
               fontSize: 15, 
               fontWeight: FontWeight.w600
             ),

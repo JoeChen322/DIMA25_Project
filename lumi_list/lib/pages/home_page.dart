@@ -43,16 +43,19 @@ class _HomePageState extends State<HomePage> {
     /*-------------phone mode-------------*/
     final bool isWideScreen = MediaQuery.of(context).orientation == Orientation.landscape;
 
+    final ColorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: ColorScheme.surface,
+
       bottomNavigationBar: isWideScreen
           ? null
           : BottomNavigationBar(
               currentIndex: _index,
               onTap: (index) => setState(() => _index = index),
-              backgroundColor: Colors.black,
-              selectedItemColor: Colors.deepPurpleAccent,
-              unselectedItemColor: Colors.grey,
+              backgroundColor: ColorScheme.surface,
+              selectedItemColor: ColorScheme.primary,
+              unselectedItemColor: ColorScheme.onSurfaceVariant,
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
@@ -65,15 +68,15 @@ class _HomePageState extends State<HomePage> {
           if (isWideScreen)
             NavigationRail(
               
-              backgroundColor: const Color(0xFF0F0F0F),
+              backgroundColor: ColorScheme.surface,
               selectedIndex: _index,
               onDestinationSelected: (index) => setState(() => _index = index),
               groupAlignment: 0.0,
               labelType: NavigationRailLabelType.all,
-              selectedIconTheme: const IconThemeData(color: Colors.deepPurpleAccent),
-              unselectedIconTheme: const IconThemeData(color: Colors.grey),
-              selectedLabelTextStyle: const TextStyle(color: Colors.deepPurpleAccent),
-              unselectedLabelTextStyle: const TextStyle(color: Colors.grey),
+              selectedIconTheme:  IconThemeData(color: ColorScheme.primary),
+              unselectedIconTheme: IconThemeData(color: ColorScheme.onSurfaceVariant),
+              selectedLabelTextStyle: TextStyle(color: ColorScheme.primary),
+              unselectedLabelTextStyle: TextStyle(color: ColorScheme.onSurfaceVariant),
               leading: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
                 child: Icon(Icons.movie_filter, color: Colors.deepPurpleAccent, size: 40),
@@ -154,6 +157,7 @@ class _HomeContentState extends State<HomeContent> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme = Theme.of(context).colorScheme;
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_trendingMovies.isEmpty) return const Center(child: Text("No data", style: TextStyle(color: Colors.white)));
 
@@ -198,15 +202,15 @@ class _HomeContentState extends State<HomeContent> {
                             gradient: LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                              colors: [Colors.transparent, Colors.deepPurple.withOpacity(0.7)],
                             ),
                           ),
                           alignment: Alignment.bottomLeft,
                           padding: const EdgeInsets.all(12),
                           child: Text(
                             movie['title'] ?? movie['name'],
-                            style: const TextStyle(
-                                color: Colors.white,
+                            style:  TextStyle(
+                                color: ColorScheme.onSurface,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16),
                             maxLines: 1,
@@ -243,7 +247,9 @@ class _HomeContentState extends State<HomeContent> {
                     Text(
                       topMovie['title'] ?? topMovie['name'] ?? "Untitled",
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white,
+                        shadows: [
+                          Shadow(blurRadius: 8, color: Colors.black)]),
                     ),
                     const SizedBox(height: 40),
                   ],
@@ -252,11 +258,11 @@ class _HomeContentState extends State<HomeContent> {
             ),
           ),
           
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(16.0),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text("Trending Now", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              child: Text("Trending Now", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: ColorScheme.onSurface)),
             ),
           ),
           
