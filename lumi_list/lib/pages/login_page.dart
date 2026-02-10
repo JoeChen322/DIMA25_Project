@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../database/user.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -84,129 +85,170 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // --- Logo ---
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    )
-                  ],
-                ),
-                clipBehavior: Clip.hardEdge,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Image.asset(
-                    'assets/icon/icon.png',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                "Welcome Back",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.grey[900],
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Sign in to continue to LumiList",
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 40),
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
-              // --- login card ---
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildLabel("Email"),
-                      const SizedBox(height: 8),
-                      _buildMinimalTextField(
-                        key: LoginPage.kEmailField,
-                        controller: _emailController,
-                        hintText: "hello@example.com",
-                        icon: Icons.email_outlined,
-                      ),
-                      const SizedBox(height: 20),
+    final bg = isDark ? cs.surface : const Color(0xFFF5F5F5);
 
-                      _buildLabel("Password"),
-                      const SizedBox(height: 8),
-                      _buildMinimalTextField(
-                        key: LoginPage.kPasswordField,
-                        controller: _passwordController,
-                        hintText: "••••••••",
-                        icon: Icons.lock_outline,
-                        isPassword: true,
-                      ),
+    final overlay = isDark
+        ? SystemUiOverlayStyle.light.copyWith(statusBarColor: bg)
+        : SystemUiOverlayStyle.dark.copyWith(
+            statusBarColor: bg,
+            statusBarIconBrightness: Brightness.dark, // Android
+            statusBarBrightness: Brightness.light, // iOS
+          );
 
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () =>
-                              Navigator.pushNamed(context, '/forgot_password'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: _primaryColor,
+    // ✅ Card background that works in light + dark
+    final cardBg = isDark ? cs.surfaceContainerHighest : Colors.white;
+
+    // Text colors that remain readable in dark mode
+    final titleColor = isDark ? cs.onSurface : Colors.grey[900]!;
+    final subtitleColor = isDark ? cs.onSurfaceVariant : Colors.grey[600]!;
+    final footerColor =
+        isDark ? cs.onSurfaceVariant.withOpacity(0.6) : Colors.grey[400]!;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlay,
+      child: Scaffold(
+        backgroundColor: bg,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // --- Logo ---
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              )
+                            ],
                           ),
-                          child: const Text(
-                            "Forgot password?",
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          clipBehavior: Clip.hardEdge,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Image.asset(
+                              'assets/icon/icon.png',
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 24),
 
-                      // login button
-                      _buildPrimaryButton(),
+                        Text(
+                          "Welcome Back",
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: titleColor,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
-                      // signup button
-                      _buildSecondaryButton(),
-                    ],
+                        Text(
+                          "Sign in to continue to LumiList",
+                          style: TextStyle(fontSize: 16, color: subtitleColor),
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        // --- login card ---
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 400),
+                          child: Container(
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(
+                              color: cardBg,
+                              borderRadius: BorderRadius.circular(24),
+                              border: isDark
+                                  ? Border.all(
+                                      color: cs.outlineVariant.withOpacity(0.5),
+                                    )
+                                  : null,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(
+                                    isDark ? 0.35 : 0.05,
+                                  ),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                )
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildLabel("Email"),
+                                const SizedBox(height: 8),
+                                _buildMinimalTextField(
+                                  key: LoginPage.kEmailField,
+                                  controller: _emailController,
+                                  hintText: "hello@example.com",
+                                  icon: Icons.email_outlined,
+                                ),
+                                const SizedBox(height: 20),
+                                _buildLabel("Password"),
+                                const SizedBox(height: 8),
+                                _buildMinimalTextField(
+                                  key: LoginPage.kPasswordField,
+                                  controller: _passwordController,
+                                  hintText: "••••••••",
+                                  icon: Icons.lock_outline,
+                                  isPassword: true,
+                                ),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: () => Navigator.pushNamed(
+                                        context, '/forgot_password'),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: _primaryColor,
+                                    ),
+                                    child: const Text(
+                                      "Forgot password?",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                _buildPrimaryButton(),
+                                const SizedBox(height: 16),
+                                _buildSecondaryButton(),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        Text(
+                          "© 2026 LumiList. All rights reserved.",
+                          style: TextStyle(color: footerColor, fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 40),
-              Text(
-                "© 2026 LumiList. All rights reserved.",
-                style: TextStyle(color: Colors.grey[400], fontSize: 12),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
