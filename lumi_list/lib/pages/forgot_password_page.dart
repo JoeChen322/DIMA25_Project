@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -12,9 +13,93 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   bool _isLoading = false;
 
   @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  bool _looksLikeEmail(String s) {
+    // Syntax-only check. We do NOT try to validate if domain actually exists.
+    final email = s.trim();
+    final re = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+    return re.hasMatch(email);
+  }
+
+  Future<void> _sendResetLink() async {
+    FocusScope.of(context).unfocus();
+
+    final email = _emailController.text.trim();
+
+    if (!_looksLikeEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter a valid email"),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+
+      if (!mounted) return;
+
+      // Security best practice: don't confirm whether the email exists.
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Check your email"),
+          content: const Text(
+            "If an account exists for this email, we sent a password reset link.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // close dialog
+                Navigator.pop(context); // back to login
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      final msg = switch (e.code) {
+        'invalid-email' => 'Invalid email format.',
+        'network-request-failed' => 'Network error. Check your connection.',
+        'too-many-requests' => 'Too many attempts. Try again later.',
+        // Don't leak whether user exists:
+        'user-not-found' =>
+          'If an account exists for this email, we sent a reset link.',
+        _ => 'Failed to send reset email. Please try again.',
+      };
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor:
+              (e.code == 'invalid-email') ? Colors.redAccent : null,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to send reset email. Try again.")),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5), 
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -29,21 +114,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Top icon
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.deepPurple.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.lock_reset, size: 60, color: Colors.deepPurple),
+                child: const Icon(Icons.lock_reset,
+                    size: 60, color: Colors.deepPurple),
               ),
               const SizedBox(height: 20),
-              
               Text(
                 "Forgot Password?",
                 style: TextStyle(
-                  fontSize: 28, fontWeight: FontWeight.w900, color: Colors.grey[900]
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.grey[900],
                 ),
               ),
               const SizedBox(height: 8),
@@ -56,8 +142,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 ),
               ),
               const SizedBox(height: 40),
-
-              // Email input field
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Container(
@@ -78,7 +162,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     children: [
                       Text(
                         "Email Address",
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Container(
@@ -88,67 +176,50 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         ),
                         child: TextField(
                           controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) =>
+                              _isLoading ? null : _sendResetLink(),
                           decoration: InputDecoration(
                             hintText: "hello@example.com",
                             hintStyle: TextStyle(color: Colors.grey[400]),
-                            prefixIcon: Icon(Icons.email_outlined, color: Colors.grey[500]),
+                            prefixIcon: Icon(Icons.email_outlined,
+                                color: Colors.grey[500]),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 16),
                           ),
                         ),
                       ),
-                      
                       const SizedBox(height: 30),
-
-                      // Send Button
                       SizedBox(
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : () async {
-                            if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
-                               ScaffoldMessenger.of(context).showSnackBar(
-                                 const SnackBar(content: Text("Please enter a valid email"), backgroundColor: Colors.redAccent)
-                               );
-                               return;
-                            }
-
-                            setState(() => _isLoading = true);
-                            
-                            // Email request simulation
-                            await Future.delayed(const Duration(seconds: 2));
-
-                            if (!mounted) return;
-                            
-                            setState(() => _isLoading = false);
-                            
-                            // Show success dialog
-                            showDialog(
-                              context: context, 
-                              builder: (context) => AlertDialog(
-                                title: const Text("Check your email"),
-                                content: const Text("We have sent a password reset link to your email address."),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context); 
-                                      Navigator.pop(context); 
-                                    }, 
-                                    child: const Text("OK")
-                                  )
-                                ],
-                              )
-                            );
-                          },
+                          onPressed: _isLoading ? null : _sendResetLink,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.deepPurple,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             elevation: 0,
                           ),
-                          child: _isLoading 
-                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text("Send Reset Link", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  "Send Reset Link",
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
                         ),
                       ),
                     ],
