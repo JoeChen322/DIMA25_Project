@@ -211,7 +211,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             backgroundColor:
                                 colorScheme.surfaceContainerHighest,
                             backgroundImage: hasNetworkAvatar
-                                ? NetworkImage(avatarUrl!)
+                                ? NetworkImage(avatarUrl)
                                 : null,
                             child: !hasNetworkAvatar
                                 ? Icon(

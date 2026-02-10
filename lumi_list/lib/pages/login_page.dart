@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../database/user.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,7 +27,10 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handleLogin() async {
     FocusScope.of(context).unfocus();
 
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill in all fields")),
       );
@@ -36,13 +40,32 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      await UserDao.login(_emailController.text, _passwordController.text);
+      await UserDao.login(email, password);
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/');
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      // Map Firebase error codes to friendly messages
+      final msg = switch (e.code) {
+        'invalid-email' => 'Invalid email format.',
+        'user-disabled' => 'This account has been disabled.',
+        'user-not-found' => 'No account found for this email.',
+        'wrong-password' => 'Incorrect password.',
+        // Newer SDKs often return this for wrong email/password:
+        'invalid-credential' => 'Incorrect email or password.',
+        'too-many-requests' => 'Too many attempts. Try again later.',
+        'network-request-failed' => 'Network error. Check your connection.',
+        _ => 'Login failed. Please try again.',
+      };
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login failed: $e")),
+        const SnackBar(content: Text("Login failed. Please try again.")),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
