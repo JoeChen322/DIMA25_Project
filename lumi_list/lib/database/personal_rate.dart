@@ -2,12 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lumi_list/services/auth_service.dart';
 
 class PersonalRateDao {
-  static final _db = FirebaseFirestore.instance;
+  static FirebaseFirestore db = FirebaseFirestore.instance;
+  static String? Function() uidProvider = () => AuthService.uid;
 
   static CollectionReference<Map<String, dynamic>> _col() {
-    final uid = AuthService.uid;
+    final uid = uidProvider();
     if (uid == null) throw Exception("Please login first");
-    return _db.collection('users').doc(uid).collection('personal_ratings');
+    return db.collection('users').doc(uid).collection('personal_ratings');
   }
 
   static Future<void> insertOrUpdateRate({

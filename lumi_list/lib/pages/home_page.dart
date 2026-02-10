@@ -5,7 +5,11 @@ import 'movie_detail.dart';
 import '../services/tmdb_api.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.initialIndex = 1});
+
+  /// For tests (and optionally future UX): start on a specific tab.
+  /// 0 = Search, 1 = Home, 2 = Me
+  final int initialIndex;
 
   // Stable keys for tests
   static const Key kBottomNav = Key('home_bottom_nav');
@@ -22,6 +26,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _index = 1;
   String? _userEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    _index = widget.initialIndex;
+  }
 
   @override
   void didChangeDependencies() {

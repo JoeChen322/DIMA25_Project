@@ -3,35 +3,37 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lumi_list/pages/login_page.dart';
 
 void main() {
-  testWidgets('Login page basic UI + validation', (WidgetTester tester) async {
+  testWidgets('Login page basic UI + validation (key-based)',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: LoginPage()));
     await tester.pump();
 
+    // Basic UI
     expect(find.text('Welcome Back'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
+    expect(find.byKey(LoginPage.kEmailField), findsOneWidget);
+    expect(find.byKey(LoginPage.kPasswordField), findsOneWidget);
+    expect(find.byKey(LoginPage.kLoginButton), findsOneWidget);
 
-    // Password field obscure toggle (assumes visibility icon exists)
-    final passwordFieldFinder = find.byType(TextField).last;
-    TextField tf = tester.widget<TextField>(passwordFieldFinder);
-    expect(tf.obscureText, isTrue);
+    // Password field should start obscured
+    TextField pwdField =
+        tester.widget<TextField>(find.byKey(LoginPage.kPasswordField));
+    expect(pwdField.obscureText, isTrue);
 
-    final toggleIcon = find.byIcon(Icons.visibility_off);
-    if (toggleIcon.evaluate().isNotEmpty) {
-      await tester.tap(toggleIcon);
+    // Toggle visibility if icon exists
+    final toggleOff = find.byIcon(Icons.visibility_off);
+    if (toggleOff.evaluate().isNotEmpty) {
+      await tester.tap(toggleOff);
       await tester.pump();
-      tf = tester.widget<TextField>(passwordFieldFinder);
-      expect(tf.obscureText, isFalse);
+
+      pwdField = tester.widget<TextField>(find.byKey(LoginPage.kPasswordField));
+      expect(pwdField.obscureText, isFalse);
     }
 
-    // Empty submit shows error (message might be SnackBar / inline)
-    await tester.tap(find.text('Login'));
-    await tester.pump();
+    // Tap login with empty fields -> should show validation SnackBar
+    await tester.tap(find.byKey(LoginPage.kLoginButton));
+    await tester.pump(); // start SnackBar animation
+    await tester.pump(const Duration(milliseconds: 300));
 
-    // Prefer exact message if you have it, else accept any "Please..." validation
-    final hasExact =
-        find.textContaining('Please fill in all fields').evaluate().isNotEmpty;
-    final hasGeneric = find.textContaining('Please').evaluate().isNotEmpty;
-
-    expect(hasExact || hasGeneric, isTrue);
+    expect(find.textContaining('Please fill in all fields'), findsOneWidget);
   });
 }

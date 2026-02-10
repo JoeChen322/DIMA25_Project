@@ -2,12 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lumi_list/services/auth_service.dart';
 
 class FavoriteDao {
-  static final _db = FirebaseFirestore.instance;
+  // allow tests to override
+  static FirebaseFirestore db = FirebaseFirestore.instance;
+  static String? Function() uidProvider = () => AuthService.uid;
 
   static CollectionReference<Map<String, dynamic>> _col() {
-    final uid = AuthService.uid;
+    final uid = uidProvider();
     if (uid == null) throw Exception("Please login first");
-    return _db.collection('users').doc(uid).collection('favorites');
+    return db.collection('users').doc(uid).collection('favorites');
   }
 
   static Future<void> insertFavorite({
@@ -55,8 +57,9 @@ class FavoriteDao {
     final Map<String, int> counts = {};
     for (final movie in favorites) {
       final genreStr = movie['genre'] as String?;
-      if (genreStr == null || genreStr.isEmpty || genreStr == "No Info")
+      if (genreStr == null || genreStr.isEmpty || genreStr == "No Info") {
         continue;
+      }
 
       for (final g in genreStr.split(',').map((x) => x.trim())) {
         if (g.isEmpty) continue;
