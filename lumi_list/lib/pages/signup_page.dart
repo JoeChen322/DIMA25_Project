@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:lumi_list/database/user.dart'; // your updated Firebase-based UserDao
+import 'package:lumi_list/database/user.dart'; // Firebase-based UserDao
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
+
+  // Stable keys for tests
+  static const Key kEmailField = Key('signup_email');
+  static const Key kPasswordField = Key('signup_password');
+  static const Key kConfirmField = Key('signup_confirm');
+  static const Key kSubmitButton = Key('signup_submit');
 
   @override
   State<SignupPage> createState() => _SignupPageState();
@@ -71,23 +77,20 @@ class _SignupPageState extends State<SignupPage> {
       // Default username from email prefix
       final defaultUsername = email.split('@')[0];
 
-      // Firebase Auth + Firestore profile doc
+      // This creates account AND signs user in automatically
       await UserDao.registerUser(email, password, defaultUsername);
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Account Created! Please Login."),
+          content: Text("Account created!"),
           backgroundColor: Colors.green,
         ),
       );
 
-      // Return to LoginPage with pre-filled info (optional)
-      Navigator.pop(context, {
-        'email': email,
-        'password': password,
-      });
+      // Go to AuthGate/Home and clear stack
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
 
@@ -172,6 +175,7 @@ class _SignupPageState extends State<SignupPage> {
                       _buildLabel("Email"),
                       const SizedBox(height: 8),
                       _buildTextField(
+                        key: SignupPage.kEmailField, // optional
                         controller: _emailController,
                         hintText: "hello@example.com",
                         icon: Icons.email_outlined,
@@ -180,6 +184,7 @@ class _SignupPageState extends State<SignupPage> {
                       _buildLabel("Password"),
                       const SizedBox(height: 8),
                       _buildTextField(
+                        key: SignupPage.kPasswordField, // optional
                         controller: _passwordController,
                         hintText: "••••••••",
                         icon: Icons.lock_outline,
@@ -193,6 +198,7 @@ class _SignupPageState extends State<SignupPage> {
                       _buildLabel("Confirm Password"),
                       const SizedBox(height: 8),
                       _buildTextField(
+                        key: SignupPage.kConfirmField, // optional
                         controller: _confirmPasswordController,
                         hintText: "••••••••",
                         icon: Icons.lock_reset,
@@ -208,6 +214,7 @@ class _SignupPageState extends State<SignupPage> {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
+                          key: SignupPage.kSubmitButton, // optional
                           onPressed: _isLoading ? null : _handleSignup,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _primaryColor,
@@ -270,6 +277,7 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   Widget _buildTextField({
+    Key? key,
     required TextEditingController controller,
     required String hintText,
     required IconData icon,
@@ -283,6 +291,7 @@ class _SignupPageState extends State<SignupPage> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: TextField(
+        key: key,
         controller: controller,
         obscureText: isPassword ? obscureText : false,
         decoration: InputDecoration(

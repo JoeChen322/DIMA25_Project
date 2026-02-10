@@ -4,6 +4,12 @@ import '../database/user.dart';
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
+  // Stable keys for tests
+  static const Key kEmailField = Key('login_email');
+  static const Key kPasswordField = Key('login_password');
+  static const Key kLoginButton = Key('login_submit');
+  static const Key kToSignupButton = Key('login_to_signup');
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -32,20 +38,17 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await UserDao.login(_emailController.text, _passwordController.text);
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/'); 
+      Navigator.pushReplacementNamed(context, '/');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Login failed: $e")),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  //change page to signup
   Future<void> _navigateToSignup() async {
     final result = await Navigator.pushNamed(context, '/signup');
     if (result != null && result is Map && mounted) {
@@ -105,10 +108,9 @@ class _LoginPageState extends State<LoginPage> {
                 "Sign in to continue to LumiList",
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
-
               const SizedBox(height: 40),
 
-              // --- login ---
+              // --- login card ---
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Container(
@@ -130,16 +132,17 @@ class _LoginPageState extends State<LoginPage> {
                       _buildLabel("Email"),
                       const SizedBox(height: 8),
                       _buildMinimalTextField(
+                        key: LoginPage.kEmailField,
                         controller: _emailController,
                         hintText: "hello@example.com",
                         icon: Icons.email_outlined,
                       ),
-
                       const SizedBox(height: 20),
 
                       _buildLabel("Password"),
                       const SizedBox(height: 8),
                       _buildMinimalTextField(
+                        key: LoginPage.kPasswordField,
                         controller: _passwordController,
                         hintText: "••••••••",
                         icon: Icons.lock_outline,
@@ -149,9 +152,15 @@ class _LoginPageState extends State<LoginPage> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () => Navigator.pushNamed(context, '/forgot_password'),
-                          style: TextButton.styleFrom(foregroundColor: _primaryColor),
-                          child: const Text("Forgot password?", style: TextStyle(fontWeight: FontWeight.bold)),
+                          onPressed: () =>
+                              Navigator.pushNamed(context, '/forgot_password'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: _primaryColor,
+                          ),
+                          child: const Text(
+                            "Forgot password?",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
 
@@ -159,20 +168,21 @@ class _LoginPageState extends State<LoginPage> {
 
                       // login button
                       _buildPrimaryButton(),
-                      
+
                       const SizedBox(height: 16),
 
-                      // sinup button
+                      // signup button
                       _buildSecondaryButton(),
                     ],
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 40),
-              
-              Text("© 2026 LumiList. All rights reserved.", 
-                style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+              Text(
+                "© 2026 LumiList. All rights reserved.",
+                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              ),
             ],
           ),
         ),
@@ -180,40 +190,54 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // main login button
   Widget _buildPrimaryButton() {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
+        key: LoginPage.kLoginButton,
         onPressed: _isLoading ? null : _handleLogin,
         style: ElevatedButton.styleFrom(
           backgroundColor: _primaryColor,
           foregroundColor: Colors.white,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: _isLoading
-            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : const Text("Login", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text(
+                "Login",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
       ),
     );
   }
 
-  // signup button
   Widget _buildSecondaryButton() {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: OutlinedButton(
+        key: LoginPage.kToSignupButton,
         onPressed: _isLoading ? null : _navigateToSignup,
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: _primaryColor.withOpacity(0.5)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           foregroundColor: _primaryColor,
         ),
-        child: const Text("Create New Account", 
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        child: const Text(
+          "Create New Account",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -221,11 +245,16 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: Colors.grey[700],
+      ),
     );
   }
 
   Widget _buildMinimalTextField({
+    Key? key,
     required TextEditingController controller,
     required String hintText,
     required IconData icon,
@@ -237,6 +266,7 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: TextField(
+        key: key,
         controller: controller,
         obscureText: isPassword ? _obscurePassword : false,
         decoration: InputDecoration(
@@ -245,12 +275,17 @@ class _LoginPageState extends State<LoginPage> {
           prefixIcon: Icon(icon, color: Colors.grey[500]),
           suffixIcon: isPassword
               ? IconButton(
-                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         ),
       ),
     );
