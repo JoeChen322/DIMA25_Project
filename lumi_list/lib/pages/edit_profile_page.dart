@@ -229,14 +229,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           isDark,
                         ),
                         const SizedBox(height: 20),
+
+                        // Bio: compact by default, can grow up to 3 lines
                         _buildGlassTextField(
                           "Bio",
                           _bioController,
                           Icons.info_outline_rounded,
                           colorScheme,
                           isDark,
+                          minLines: 1,
                           maxLines: 3,
                         ),
+
                         const SizedBox(height: 20),
                         _buildGlassTextField(
                           "Phone",
@@ -273,7 +277,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     IconData icon,
     ColorScheme colorScheme,
     bool isDark, {
-    int maxLines = 1,
+    int minLines = 1,
+    int? maxLines = 1,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,6 +306,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
           child: TextField(
             controller: controller,
+            minLines: minLines,
             maxLines: maxLines,
             style: TextStyle(color: colorScheme.onSurface, fontSize: 15),
             cursorColor: colorScheme.primary,
