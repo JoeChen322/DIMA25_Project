@@ -99,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
             statusBarBrightness: Brightness.light, // iOS
           );
 
-    // ✅ Card background that works in light + dark
+    // Card background that works in light + dark
     final cardBg = isDark ? cs.surfaceContainerHighest : Colors.white;
 
     // Text colors that remain readable in dark mode

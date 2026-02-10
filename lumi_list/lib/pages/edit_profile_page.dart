@@ -16,7 +16,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController _bioController;
   late TextEditingController _phoneController;
 
-  Uint8List? _selectedImageBytes; // ✅ NEW: works on web + mobile
+  Uint8List? _selectedImageBytes; // works on web + mobile
   String? _existingAvatarUrl; // existing network URL from Firestore
   String? _email;
 
@@ -67,7 +67,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (pickedFile == null) return;
 
-    final bytes = await pickedFile.readAsBytes(); // ✅ key for web
+    final bytes = await pickedFile.readAsBytes(); // key for web
     setState(() => _selectedImageBytes = bytes);
   }
 
@@ -77,7 +77,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       'bio': _bioController.text.trim(),
       'phone': _phoneController.text.trim(),
 
-      // ✅ return bytes instead of local path
+      // Return bytes instead of local path
       'avatarBytes': _selectedImageBytes,
 
       // keep existing URL if no new pick
