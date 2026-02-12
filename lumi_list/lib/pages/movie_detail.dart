@@ -3,6 +3,8 @@ and allow user to favorite and rate the movie*/
 /*get info from both TMDb API and OMDb API*/
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../widgets/cast_strip.dart';
 import '../models/cast.dart';
 import '../services/tmdb_api.dart';
@@ -48,7 +50,12 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   final Set<String> _expandedReviewIds = <String>{};
 
   // how many pages we fetch to build top 5
-  static const int _reviewPrefetchPages = 3; // up to 60 reviews
+  static const int _reviewPrefetchPages = 3; // up to ~60 reviews
+
+  // ---------------- Media (TMDb) ----------------
+  bool _isLoadingMedia = true;
+  Map<String, dynamic>? _bestVideo; // picked teaser/trailer
+  List<String> _stillUrls = []; // backdrops => full URLs
 
   @override
   void initState() {
@@ -74,13 +81,18 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
     if (tmdbId != null) {
       _loadCast(tmdbId);
-      _loadTopReviews(tmdbId); // <-- Reviews
+
+      // Reviews + Media
+      _loadTopReviews(tmdbId);
+      _loadMedia(tmdbId);
     } else {
-      // if no tmdbId available, stop loading reviews
       if (mounted) {
         setState(() {
           _isLoadingReviews = false;
           _topReviews = [];
+          _isLoadingMedia = false;
+          _bestVideo = null;
+          _stillUrls = [];
         });
       }
     }
@@ -219,8 +231,11 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
       final collected = <dynamic>[];
       for (int page = 1; page <= _reviewPrefetchPages; page++) {
-        final batch = await tmdbService.getMovieReviews(tmdbId,
-            page: page, language: 'en-US');
+        final batch = await tmdbService.getMovieReviews(
+          tmdbId,
+          page: page,
+          language: 'en-US',
+        );
         if (batch.isEmpty) break;
         collected.addAll(batch);
         if (batch.length < 20) break;
@@ -263,19 +278,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     return list.take(5).toList();
   }
 
-  String _formatIsoDate(String? iso) {
-    if (iso == null || iso.isEmpty) return "";
-    try {
-      final dt = DateTime.parse(iso);
-      final y = dt.year.toString().padLeft(4, '0');
-      final m = dt.month.toString().padLeft(2, '0');
-      final d = dt.day.toString().padLeft(2, '0');
-      return "$y-$m-$d";
-    } catch (_) {
-      return iso.length >= 10 ? iso.substring(0, 10) : iso;
-    }
-  }
-
   double _authorRating10(dynamic review) {
     final ad = (review is Map) ? review['author_details'] : null;
     final r = (ad is Map) ? ad['rating'] : null;
@@ -316,6 +318,19 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     return null;
   }
 
+  String _formatIsoDate(String? iso) {
+    if (iso == null || iso.isEmpty) return "";
+    try {
+      final dt = DateTime.parse(iso);
+      final y = dt.year.toString().padLeft(4, '0');
+      final m = dt.month.toString().padLeft(2, '0');
+      final d = dt.day.toString().padLeft(2, '0');
+      return "$y-$m-$d";
+    } catch (_) {
+      return iso.length >= 10 ? iso.substring(0, 10) : iso;
+    }
+  }
+
   Widget _starRowFrom10(double rating10, ColorScheme cs) {
     final stars = (rating10 / 2.0).clamp(0.0, 5.0);
     final full = stars.floor();
@@ -332,7 +347,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     for (int i = 0; i < empty; i++) {
       icons.add(Icon(Icons.star_border, size: 16, color: cs.onSurfaceVariant));
     }
-
     return Row(children: icons);
   }
 
@@ -498,6 +512,379 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     );
   }
 
+  // ---------------- Media (videos + stills) ----------------
+  Future<void> _loadMedia(int tmdbId) async {
+    try {
+      if (mounted) {
+        setState(() {
+          _isLoadingMedia = true;
+          _bestVideo = null;
+          _stillUrls = [];
+        });
+      }
+
+      final videos = await tmdbService.getMovieVideos(
+        tmdbId,
+        language: 'en-US',
+      );
+
+      // prefer Teaser > Trailer > first YouTube
+      Map<String, dynamic>? picked;
+      final yt = videos
+          .where((v) =>
+              v is Map &&
+              v['site'] == 'YouTube' &&
+              (v['key']?.toString().isNotEmpty ?? false))
+          .cast<Map<String, dynamic>>()
+          .toList();
+
+      Map<String, dynamic>? firstWhereType(String type) {
+        for (final v in yt) {
+          if ((v['type'] ?? '').toString().toLowerCase() ==
+              type.toLowerCase()) {
+            return v;
+          }
+        }
+        return null;
+      }
+
+      picked = firstWhereType('Teaser') ??
+          firstWhereType('Trailer') ??
+          (yt.isNotEmpty ? yt.first : null);
+
+      final backdrops = await tmdbService.getMovieBackdrops(
+        tmdbId,
+        includeImageLanguage: 'en,null',
+      );
+
+      // take many, but UI shows 5
+      final urls = <String>[];
+      for (final b in backdrops) {
+        if (b is! Map) continue;
+        final path = b['file_path']?.toString();
+        if (path == null || path.isEmpty) continue;
+        urls.add("https://image.tmdb.org/t/p/w780$path");
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _bestVideo = picked;
+        _stillUrls = urls;
+        _isLoadingMedia = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _bestVideo = null;
+        _stillUrls = [];
+        _isLoadingMedia = false;
+      });
+    }
+  }
+
+  String? _youtubeKey() {
+    final k = _bestVideo?['key'];
+    if (k == null) return null;
+    final s = k.toString();
+    return s.isEmpty ? null : s;
+  }
+
+  String? _youtubeThumb(String key) {
+    return "https://img.youtube.com/vi/$key/hqdefault.jpg";
+  }
+
+  Future<void> _playYoutube(String key) async {
+    final uri = Uri.parse("https://www.youtube.com/watch?v=$key");
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Could not open video.")),
+      );
+    }
+  }
+
+  void _openImageViewer(String url) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.92),
+      builder: (_) => Dialog(
+        insetPadding: EdgeInsets.zero,
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: InteractiveViewer(
+                child: Center(
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.broken_image,
+                      color: Colors.white,
+                      size: 60,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 24,
+              right: 16,
+              child: CircleAvatar(
+                backgroundColor: Colors.black54,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMediaSection(ColorScheme cs) {
+    final key = _youtubeKey();
+
+    // show up to 5 stills total
+    final stills = _stillUrls.take(5).toList();
+
+    if (_isLoadingMedia) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Videos / Stills",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Center(child: CircularProgressIndicator()),
+        ],
+      );
+    }
+
+    if (key == null && stills.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Videos / Stills",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: cs.onSurface,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            "No videos or stills found.",
+            style: TextStyle(color: cs.onSurfaceVariant),
+          ),
+        ],
+      );
+    }
+
+    // Layout like: [VIDEO][IMAGE] on top, then 4 images below (if available)
+    final firstImage = stills.isNotEmpty ? stills.first : null;
+    final restImages = stills.length > 1 ? stills.sublist(1) : <String>[];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Videos / Stills",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: cs.onSurface,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _buildVideoTile(cs, key),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildStillTile(cs, firstImage),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (restImages.isNotEmpty)
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: restImages.length > 4 ? 4 : restImages.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 1.0,
+            ),
+            itemBuilder: (_, i) => _buildSmallImageTile(cs, restImages[i]),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildVideoTile(ColorScheme cs, String? key) {
+    final border = BorderRadius.circular(12);
+
+    if (key == null) {
+      return Container(
+        height: 120,
+        decoration: BoxDecoration(
+          borderRadius: border,
+          color: cs.surfaceContainerHighest.withOpacity(0.35),
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        child: Center(
+          child: Text(
+            "No Teaser",
+            style: TextStyle(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final thumb = _youtubeThumb(key);
+
+    return InkWell(
+      borderRadius: border,
+      onTap: () => _playYoutube(key),
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          borderRadius: border,
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              thumb!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: cs.surfaceContainerHighest.withOpacity(0.35),
+                child: Icon(Icons.play_circle_fill,
+                    color: cs.onSurfaceVariant, size: 42),
+              ),
+            ),
+            Container(
+              color: Colors.black.withOpacity(0.18),
+            ),
+            Center(
+              child: Icon(
+                Icons.play_circle_fill,
+                color: Colors.white.withOpacity(0.92),
+                size: 44,
+              ),
+            ),
+            Positioned(
+              left: 10,
+              bottom: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.55),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Text(
+                  "Teaser",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStillTile(ColorScheme cs, String? url) {
+    final border = BorderRadius.circular(12);
+
+    if (url == null) {
+      return Container(
+        height: 120,
+        decoration: BoxDecoration(
+          borderRadius: border,
+          color: cs.surfaceContainerHighest.withOpacity(0.35),
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        child: Center(
+          child: Text(
+            "No Stills",
+            style: TextStyle(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return InkWell(
+      borderRadius: border,
+      onTap: () => _openImageViewer(url),
+      child: Container(
+        height: 120,
+        decoration: BoxDecoration(
+          borderRadius: border,
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            color: cs.surfaceContainerHighest.withOpacity(0.35),
+            child: Icon(Icons.broken_image, color: cs.onSurfaceVariant),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmallImageTile(ColorScheme cs, String url) {
+    final border = BorderRadius.circular(10);
+
+    return InkWell(
+      borderRadius: border,
+      onTap: () => _openImageViewer(url),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: border,
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            color: cs.surfaceContainerHighest.withOpacity(0.35),
+            child: Icon(Icons.broken_image, color: cs.onSurfaceVariant),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -571,6 +958,8 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
             ],
           ),
           const SizedBox(height: 20),
+
+          // ---- Summary ----
           Text(
             "Summary",
             style: TextStyle(
@@ -631,7 +1020,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           ),
           const SizedBox(height: 20),
 
-          // ------------- show category -----------
+          // ---- Category ----
           if (genreList.isNotEmpty)
             Wrap(
               alignment: WrapAlignment.start,
@@ -664,9 +1053,13 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                     .toList(),
               ],
             ),
-          if (genreList.isNotEmpty) const SizedBox(height: 20),
+          if (genreList.isNotEmpty) const SizedBox(height: 22),
 
-          // ------------------------ cast ------------------------
+          // ---- NEW: Videos / Stills ----
+          _buildMediaSection(colorScheme),
+          const SizedBox(height: 28),
+
+          // ---- Cast ----
           Text(
             "Cast",
             style: TextStyle(
@@ -681,7 +1074,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
               : CastStrip(cast: cast),
           const SizedBox(height: 30),
 
-          // ------------------------ ratings ------------------------
+          // ---- Ratings ----
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -707,10 +1100,9 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
               ],
             ),
           ),
-
           const SizedBox(height: 30),
 
-          // ------------------------ reviews (NEW) ------------------------
+          // ---- Reviews ----
           _buildReviewsSection(colorScheme),
 
           const SizedBox(height: 50),

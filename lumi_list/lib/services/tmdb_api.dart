@@ -228,4 +228,43 @@ class TmdbService {
       return [];
     }
   }
+
+  // ---------- Videos (Teasers / Trailers) ----------
+  Future<List<dynamic>> getMovieVideos(
+    int movieId, {
+    String language = 'en-US',
+  }) async {
+    try {
+      final res = await _dio.get(
+        '$_baseUrl/movie/$movieId/videos',
+        options: _opts(),
+        queryParameters: {'language': language},
+      );
+      return (res.data['results'] as List?) ?? [];
+    } catch (e) {
+      debugPrint('TMDb movie videos error: $e');
+      return [];
+    }
+  }
+
+  // ---------- Images (stills / backdrops) ----------
+  Future<List<dynamic>> getMovieBackdrops(
+    int movieId, {
+    String includeImageLanguage = 'en,null',
+  }) async {
+    try {
+      final res = await _dio.get(
+        '$_baseUrl/movie/$movieId/images',
+        options: _opts(),
+        queryParameters: {
+          // TMDb accepts include_image_language like "en,null"
+          'include_image_language': includeImageLanguage,
+        },
+      );
+      return (res.data['backdrops'] as List?) ?? [];
+    } catch (e) {
+      debugPrint('TMDb movie images error: $e');
+      return [];
+    }
+  }
 }

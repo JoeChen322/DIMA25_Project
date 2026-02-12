@@ -19,7 +19,6 @@ tasks.register("clean", Delete) {
 subprojects {
     project.configurations.all {
         resolutionStrategy {
-            // 强制将 activity 库降级到 1.9.3，它与 AGP 8.6.0 兼容
             force 'androidx.activity:activity:1.9.3'
             force 'androidx.activity:activity-ktx:1.9.3'
         }
