@@ -60,7 +60,7 @@ class UserDao {
     required String username,
     required String bio,
     required String phone,
-    Uint8List? avatarBytes, // ✅ NEW: bytes instead of local path
+    Uint8List? avatarBytes, // Bytes instead of local path
     String? existingAvatarUrl,
   }) async {
     final uid = getCurrentUserId();

@@ -1,8 +1,5 @@
-/*in ME/IMDB CLASSICS PAGE, change to use 
-getTopRatedMovies from TMDB service to fetch top rated movies*/
-
 import 'package:flutter/material.dart';
-import '../services/tmdb_api.dart'; // TMDB
+import '../services/tmdb_api.dart';
 import 'movie_detail.dart';
 
 class ClassicsPage extends StatefulWidget {
@@ -14,39 +11,111 @@ class ClassicsPage extends StatefulWidget {
 
 class _ClassicsPageState extends State<ClassicsPage> {
   final TmdbService _tmdbService = TmdbService(
-      'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U');
+    'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlNWUxYTU5ODc0YzMwZDlmMWM2NTJlYjllZDQ4MmMzMyIsIm5iZiI6MTc2NjQzOTY0Mi40NTIsInN1YiI6IjY5NDliYWRhNTNhODI1Nzk1YzE1NTk5OCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.V0Z-rlGFtBKfCUHFx3nNnqxVNoJ-T3YNVDF8URfMj4U',
+  );
+
+  final ScrollController _scrollController = ScrollController();
 
   List<dynamic> _topMovies = [];
-  bool _isLoading = true;
+  bool _isLoading = true; // first page
+  bool _isPaging = false; // load more
+  bool _hasMore = true;
+
+  int _page = 1;
+
+  bool _showBackToTop = false;
+
+  static const int _maxItems = 100; // keep “Top 100” behavior
 
   @override
   void initState() {
     super.initState();
-    _fetchClassics();
+    _fetchInitial();
+
+    _scrollController.addListener(() {
+      final shouldShow = _scrollController.hasClients &&
+          _scrollController.offset > 520 &&
+          _topMovies.isNotEmpty;
+      if (shouldShow != _showBackToTop) {
+        setState(() => _showBackToTop = shouldShow);
+      }
+    });
   }
 
-  Future<void> _fetchClassics() async {
+  Future<void> _fetchInitial() async {
+    setState(() {
+      _isLoading = true;
+      _isPaging = false;
+      _hasMore = true;
+      _page = 1;
+      _topMovies = [];
+      _showBackToTop = false;
+    });
+
     try {
-      // request top rated movies from TMDB, fetching 3 pages to get at least 50 movies
-      final results = await Future.wait([
-        _tmdbService.getTopRatedMovies(page: 1),
-        _tmdbService.getTopRatedMovies(page: 2),
-        _tmdbService.getTopRatedMovies(page: 3),
-      ]);
+      final movies = await _tmdbService.getTopRatedMovies(page: 1);
 
-      // merge results and take list
-      List<dynamic> allMovies = results.expand((x) => x).toList();
+      if (!mounted) return;
 
-      if (mounted) {
-        setState(() {
-          _topMovies = allMovies.take(50).toList();
-          _isLoading = false;
-        });
-      }
+      final list = List<dynamic>.from(movies);
+      final capped =
+          list.length > _maxItems ? list.take(_maxItems).toList() : list;
+
+      setState(() {
+        _topMovies = capped;
+        _isLoading = false;
+        _hasMore = capped.isNotEmpty && capped.length < _maxItems;
+      });
     } catch (e) {
       debugPrint("fail: $e");
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoading || _isPaging || !_hasMore) return;
+
+    setState(() => _isPaging = true);
+
+    try {
+      final nextPage = _page + 1;
+      final movies = await _tmdbService.getTopRatedMovies(page: nextPage);
+
+      if (!mounted) return;
+
+      if (movies.isEmpty) {
+        setState(() {
+          _isPaging = false;
+          _hasMore = false;
+        });
+        return;
+      }
+
+      final merged = List<dynamic>.from(_topMovies)..addAll(movies);
+
+      // cap to Top 50
+      final capped =
+          merged.length > _maxItems ? merged.take(_maxItems).toList() : merged;
+
+      setState(() {
+        _page = nextPage;
+        _topMovies = capped;
+        _isPaging = false;
+        _hasMore = capped.length < _maxItems;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isPaging = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to load more.")),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -57,10 +126,26 @@ class _ClassicsPageState extends State<ClassicsPage> {
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
+      floatingActionButton: _showBackToTop
+          ? FloatingActionButton(
+              onPressed: () {
+                _scrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 420),
+                  curve: Curves.easeOutCubic,
+                );
+              },
+              child: const Icon(Icons.arrow_upward_rounded),
+            )
+          : null,
       appBar: AppBar(
-        title: Text("IMDb Top 50",
-            style: TextStyle(
-                fontWeight: FontWeight.bold, color: colorScheme.onSurface)),
+        title: Text(
+          "IMDb Top 100",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -75,29 +160,94 @@ class _ClassicsPageState extends State<ClassicsPage> {
                     : Colors.black.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.arrow_back_ios_new_rounded,
-                  color: colorScheme.onSurface, size: 18),
+              child: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: colorScheme.onSurface,
+                size: 18,
+              ),
             ),
           ),
         ),
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Colors.deepPurpleAccent))
+              child: CircularProgressIndicator(color: Colors.deepPurpleAccent),
+            )
           : ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              // _topMovies.length is 50
-              itemCount: _topMovies.length,
+              itemCount: _topMovies.length + 1,
               itemBuilder: (context, index) {
-                final movie = _topMovies[index];
-                return _buildMovieItem(movie, index + 1, colorScheme, isDark);
+                if (index < _topMovies.length) {
+                  final movie = _topMovies[index];
+                  return _buildMovieItem(
+                    movie,
+                    index + 1,
+                    colorScheme,
+                    isDark,
+                  );
+                }
+                return _buildFooter(colorScheme);
               },
             ),
     );
   }
 
+  Widget _buildFooter(ColorScheme colorScheme) {
+    if (_isPaging) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.2,
+                color: colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              "Loading more...",
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_hasMore) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(0, 10, 0, 24),
+        child: Center(
+          child: ElevatedButton.icon(
+            onPressed: _loadMore,
+            icon: const Icon(Icons.add),
+            label: const Text("Load more"),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 14, 0, 28),
+      child: Center(
+        child: Text(
+          "No more results",
+          style: TextStyle(color: colorScheme.onSurfaceVariant),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMovieItem(
-      dynamic movie, int rank, ColorScheme colorScheme, bool isDark) {
+    dynamic movie,
+    int rank,
+    ColorScheme colorScheme,
+    bool isDark,
+  ) {
     return GestureDetector(
       onTap: () {
         final formattedMovie = {
@@ -116,9 +266,11 @@ class _ClassicsPageState extends State<ClassicsPage> {
         };
 
         Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => MovieDetailPage(movie: formattedMovie)));
+          context,
+          MaterialPageRoute(
+            builder: (_) => MovieDetailPage(movie: formattedMovie),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -135,11 +287,14 @@ class _ClassicsPageState extends State<ClassicsPage> {
           children: [
             SizedBox(
               width: 40,
-              child: Text("#$rank",
-                  style: const TextStyle(
-                      color: Colors.amber,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18)),
+              child: Text(
+                "#$rank",
+                style: const TextStyle(
+                  color: Colors.amber,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
             ),
             const SizedBox(width: 5),
             ClipRRect(
@@ -152,11 +307,11 @@ class _ClassicsPageState extends State<ClassicsPage> {
                 height: 90,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                    width: 60,
-                    height: 90,
-                    color: colorScheme.surfaceContainerHighest,
-                    child:
-                        Icon(Icons.movie, color: colorScheme.onSurfaceVariant)),
+                  width: 60,
+                  height: 90,
+                  color: colorScheme.surfaceContainerHighest,
+                  child: Icon(Icons.movie, color: colorScheme.onSurfaceVariant),
+                ),
               ),
             ),
             const SizedBox(width: 15),
@@ -164,26 +319,32 @@ class _ClassicsPageState extends State<ClassicsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(movie["title"] ?? "Unknown",
-                      style: TextStyle(
-                          color: colorScheme.onSurface,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    movie["title"] ?? "Unknown",
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 5),
                   Text(
-                      (movie["release_date"] != null &&
-                              movie["release_date"].toString().length >= 4)
-                          ? movie["release_date"].split('-')[0]
-                          : "N/A",
-                      style: TextStyle(color: colorScheme.onSurfaceVariant)),
-                  const SizedBox(height: 5),
+                    (movie["release_date"] != null &&
+                            movie["release_date"].toString().length >= 4)
+                        ? movie["release_date"].split('-')[0]
+                        : "N/A",
+                    style: TextStyle(color: colorScheme.onSurfaceVariant),
+                  ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios,
-                color: colorScheme.onSurfaceVariant.withOpacity(0.3), size: 16),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: colorScheme.onSurfaceVariant.withOpacity(0.3),
+              size: 16,
+            ),
           ],
         ),
       ),
