@@ -4,6 +4,7 @@ and allow user to favorite and rate the movie*/
 
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../widgets/cast_strip.dart';
 import '../models/cast.dart';
@@ -12,6 +13,8 @@ import '../services/omdb_api.dart';
 import '../database/favorite.dart';
 import '../database/personal_rate.dart';
 import '../database/seelater.dart';
+import '../database/user.dart';
+import '../database/user_review.dart';
 import '../widgets/icon_action_button.dart';
 
 class MovieDetailPage extends StatefulWidget {
@@ -44,13 +47,19 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   String _director = "No Info";
   String _genre = "No Info";
 
-  // ---------------- Reviews (TMDb) ----------------
+  // ---------------- TMDb Reviews ----------------
   List<dynamic> _topReviews = [];
   bool _isLoadingReviews = true;
   final Set<String> _expandedReviewIds = <String>{};
-
-  // how many pages we fetch to build top 5
   static const int _reviewPrefetchPages = 3; // up to ~60 reviews
+
+  // ---------------- My Review (Firestore) ----------------
+  Map<String, dynamic>? _myReviewDoc;
+  bool _isLoadingMyReview = true;
+
+  String _myName = "You";
+  String? _myAvatarUrl; // from users/{uid}.avatarUrl
+  bool _isSavingMyReview = false;
 
   // ---------------- Media (TMDb) ----------------
   bool _isLoadingMedia = true;
@@ -63,7 +72,93 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     _initializeData();
   }
 
+  // ------------ Small helpers ------------
+  void _toast(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  bool _isLoggedIn() => UserDao.getCurrentUserId() != null;
+
+  Future<void> _loadMyProfile() async {
+    try {
+      final profile = await UserDao.getProfile();
+      if (!mounted) return;
+
+      final username = (profile?['username'] ?? "").toString().trim();
+      final avatarUrl = (profile?['avatarUrl'] ?? "").toString().trim();
+
+      setState(() {
+        _myName = username.isEmpty ? "You" : username;
+        _myAvatarUrl =
+            (avatarUrl.isEmpty || avatarUrl == "NA") ? null : avatarUrl;
+      });
+    } catch (_) {
+      // ignore: keep defaults
+    }
+  }
+
+  Future<void> _loadMyReview(String imdbId) async {
+    if (!_isLoggedIn()) {
+      if (!mounted) return;
+      setState(() {
+        _myReviewDoc = null;
+        _isLoadingMyReview = false;
+      });
+      return;
+    }
+
+    try {
+      final doc = await UserReviewDao.getMyReview(imdbId);
+      if (!mounted) return;
+      setState(() {
+        _myReviewDoc = doc;
+        _isLoadingMyReview = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _myReviewDoc = null;
+        _isLoadingMyReview = false;
+      });
+    }
+  }
+
+  Map<String, dynamic>? _myReviewAsUnifiedReview() {
+    final doc = _myReviewDoc;
+    if (doc == null) return null;
+
+    final imdbId = (doc['imdb_id'] ?? realImdbId ?? "").toString();
+    final content = (doc['content'] ?? "").toString().trim();
+    if (content.isEmpty) return null;
+
+    final rating5 = doc['rating'];
+    final r5 = (rating5 is num) ? rating5.toInt() : 0;
+    final rating10 = (r5 * 2).toDouble(); // align with TMDb 0..10
+
+    final createdAt = doc['createdAt'];
+    final updatedAt = doc['updatedAt'];
+
+    // keep "created_at" style to reuse the same tile renderer
+    return {
+      'id': 'user:$imdbId',
+      'author': _myName,
+      'author_details': {
+        'username': _myName,
+        'rating': rating10,
+        // _avatarUrl() supports absolute http URLs
+        'avatar_path': _myAvatarUrl,
+      },
+      'content': content,
+      'created_at': updatedAt ?? createdAt,
+      'source': 'user',
+    };
+  }
+
+  // ------------ Init ------------
   Future<void> _initializeData() async {
+    await _loadMyProfile(); // so My Review tile has name/avatar
+
     String? id = widget.movie['imdbID'];
     int? tmdbId;
 
@@ -77,6 +172,48 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
       _loadOmdbDetails(id);
       realImdbId = id;
       tmdbId = await tmdbService.getMovieIdByImdb(id);
+    }
+
+    if (realImdbId != null) {
+      // load my review from Firestore
+      await _loadMyReview(realImdbId!);
+
+      // load favorite/see later/rating (don’t crash if not logged in)
+      try {
+        final omdbData = await OmdbApi.getMovieById(realImdbId!);
+
+        bool favoriteStatus = false;
+        bool laterStatus = false;
+        int? savedRating;
+
+        try {
+          favoriteStatus = await FavoriteDao.isFavorite(realImdbId!);
+        } catch (_) {}
+        try {
+          laterStatus = await SeeLaterDao.isSeeLater(realImdbId!);
+        } catch (_) {}
+        try {
+          savedRating = await PersonalRateDao.getRating(realImdbId!);
+        } catch (_) {}
+
+        if (mounted) {
+          setState(() {
+            fullOmdbData = omdbData;
+            isFavorite = favoriteStatus;
+            isSeeLater = laterStatus;
+            userRating = savedRating;
+          });
+        }
+      } catch (_) {
+        // ignore
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _myReviewDoc = null;
+          _isLoadingMyReview = false;
+        });
+      }
     }
 
     if (tmdbId != null) {
@@ -93,22 +230,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           _isLoadingMedia = false;
           _bestVideo = null;
           _stillUrls = [];
-        });
-      }
-    }
-
-    if (realImdbId != null) {
-      final omdbData = await OmdbApi.getMovieById(realImdbId!);
-      final favoriteStatus = await FavoriteDao.isFavorite(realImdbId!);
-      final laterStatus = await SeeLaterDao.isSeeLater(realImdbId!);
-      final savedRating = await PersonalRateDao.getRating(realImdbId!);
-
-      if (mounted) {
-        setState(() {
-          fullOmdbData = omdbData;
-          isFavorite = favoriteStatus;
-          isSeeLater = laterStatus;
-          userRating = savedRating;
         });
       }
     }
@@ -132,16 +253,26 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
   Future<void> _toggleSeeLater() async {
     if (realImdbId == null) return;
-    if (isSeeLater) {
-      await SeeLaterDao.deleteSeeLater(realImdbId!);
-    } else {
-      await SeeLaterDao.insertSeeLater(
-        imdbId: realImdbId!,
-        title: widget.movie['Title'] ?? "Unknown",
-        poster: widget.movie['Poster'] ?? "",
-      );
+
+    if (!_isLoggedIn()) {
+      _toast("Please login first.");
+      return;
     }
-    setState(() => isSeeLater = !isSeeLater);
+
+    try {
+      if (isSeeLater) {
+        await SeeLaterDao.deleteSeeLater(realImdbId!);
+      } else {
+        await SeeLaterDao.insertSeeLater(
+          imdbId: realImdbId!,
+          title: widget.movie['Title'] ?? "Unknown",
+          poster: widget.movie['Poster'] ?? "",
+        );
+      }
+      setState(() => isSeeLater = !isSeeLater);
+    } catch (_) {
+      _toast("Failed. Please try again.");
+    }
   }
 
   Future<void> _loadCast(int tmdbId) async {
@@ -160,20 +291,35 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
   Future<void> _toggleFavorite() async {
     if (realImdbId == null) return;
-    if (isFavorite) {
-      await FavoriteDao.deleteFavorite(realImdbId!);
-    } else {
-      await FavoriteDao.insertFavorite(
-        imdbId: realImdbId!,
-        title: widget.movie['Title'] ?? "Unknown",
-        poster: widget.movie['Poster'] ?? "",
-        genre: _genre,
-      );
+
+    if (!_isLoggedIn()) {
+      _toast("Please login first.");
+      return;
     }
-    setState(() => isFavorite = !isFavorite);
+
+    try {
+      if (isFavorite) {
+        await FavoriteDao.deleteFavorite(realImdbId!);
+      } else {
+        await FavoriteDao.insertFavorite(
+          imdbId: realImdbId!,
+          title: widget.movie['Title'] ?? "Unknown",
+          poster: widget.movie['Poster'] ?? "",
+          genre: _genre,
+        );
+      }
+      setState(() => isFavorite = !isFavorite);
+    } catch (_) {
+      _toast("Failed. Please try again.");
+    }
   }
 
   void _showRatingDialog() {
+    if (!_isLoggedIn()) {
+      _toast("Please login first.");
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -200,15 +346,20 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                     ),
                     onPressed: () async {
                       int newScore = index + 1;
-                      if (realImdbId != null) {
-                        await PersonalRateDao.insertOrUpdateRate(
-                          imdbId: realImdbId!,
-                          title: widget.movie['Title'] ?? "Unknown",
-                          rating: newScore,
-                        );
+                      try {
+                        if (realImdbId != null) {
+                          await PersonalRateDao.insertOrUpdateRate(
+                            imdbId: realImdbId!,
+                            title: widget.movie['Title'] ?? "Unknown",
+                            rating: newScore,
+                          );
+                        }
+                        if (mounted) setState(() => userRating = newScore);
+                        Navigator.pop(context);
+                      } catch (_) {
+                        Navigator.pop(context);
+                        _toast("Failed to save rating.");
                       }
-                      if (mounted) setState(() => userRating = newScore);
-                      Navigator.pop(context);
                     },
                   ),
                 ),
@@ -220,7 +371,155 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     );
   }
 
-  // ---------------- Reviews: fetch + pick top 5 ----------------
+  // ---------------- My Review dialog ----------------
+  void _showMyReviewDialog() {
+    if (realImdbId == null) {
+      _toast("Movie ID not ready.");
+      return;
+    }
+    if (!_isLoggedIn()) {
+      _toast("Please login first.");
+      return;
+    }
+
+    final existingText = (_myReviewDoc?['content'] ?? "").toString();
+    final existingRating = (_myReviewDoc?['rating'] is num)
+        ? (_myReviewDoc!['rating'] as num).toInt()
+        : (userRating ?? 0);
+
+    final controller = TextEditingController(text: existingText);
+    int draftRating = existingRating;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setLocal) => AlertDialog(
+            title: Text(
+                _myReviewDoc == null ? "Write a Review" : "Edit Your Review"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // rating
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Your rating",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: List.generate(5, (i) {
+                    final filled = draftRating > i;
+                    return IconButton(
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => setLocal(() => draftRating = i + 1),
+                      icon: Icon(
+                        filled ? Icons.star : Icons.star_border,
+                        color: filled ? Colors.amber : Colors.grey,
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 8),
+
+                // text
+                TextField(
+                  controller: controller,
+                  maxLines: 5,
+                  minLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: "Write something about this movie...",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              if (_myReviewDoc != null)
+                TextButton(
+                  onPressed: _isSavingMyReview
+                      ? null
+                      : () async {
+                          Navigator.pop(context);
+                          await _deleteMyReview();
+                        },
+                  child: const Text("Delete"),
+                ),
+              TextButton(
+                onPressed:
+                    _isSavingMyReview ? null : () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: _isSavingMyReview
+                    ? null
+                    : () async {
+                        final text = controller.text.trim();
+                        if (text.isEmpty) {
+                          _toast("Please write something.");
+                          return;
+                        }
+                        Navigator.pop(context);
+                        await _saveMyReview(text, draftRating);
+                      },
+                child: const Text("Save"),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveMyReview(String text, int rating5) async {
+    if (realImdbId == null) return;
+    if (!_isLoggedIn()) {
+      _toast("Please login first.");
+      return;
+    }
+
+    setState(() => _isSavingMyReview = true);
+    try {
+      await UserReviewDao.upsertReview(
+        imdbId: realImdbId!,
+        title: (widget.movie['Title'] ?? "Unknown").toString(),
+        content: text,
+        rating: rating5.clamp(0, 5),
+      );
+      await _loadMyReview(realImdbId!);
+      _toast("Review saved.");
+    } catch (_) {
+      _toast("Failed to save review.");
+    } finally {
+      if (mounted) setState(() => _isSavingMyReview = false);
+    }
+  }
+
+  Future<void> _deleteMyReview() async {
+    if (realImdbId == null) return;
+    if (!_isLoggedIn()) {
+      _toast("Please login first.");
+      return;
+    }
+
+    setState(() => _isSavingMyReview = true);
+    try {
+      await UserReviewDao.deleteMyReview(realImdbId!);
+      await _loadMyReview(realImdbId!);
+      _toast("Review deleted.");
+    } catch (_) {
+      _toast("Failed to delete review.");
+    } finally {
+      if (mounted) setState(() => _isSavingMyReview = false);
+    }
+  }
+
+  // ---------------- TMDb Reviews: fetch + pick top 5 ----------------
   Future<void> _loadTopReviews(int tmdbId) async {
     try {
       setState(() {
@@ -308,6 +607,8 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     if (ap == null) return null;
 
     final s = ap.toString();
+    if (s.isEmpty || s == "NA") return null;
+
     if (s.startsWith('/https://') || s.startsWith('/http://')) {
       return s.substring(1);
     }
@@ -318,17 +619,32 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     return null;
   }
 
-  String _formatIsoDate(String? iso) {
-    if (iso == null || iso.isEmpty) return "";
-    try {
-      final dt = DateTime.parse(iso);
+  String _formatDate(dynamic v) {
+    if (v == null) return "";
+
+    // Firestore Timestamp support (for My Review)
+    if (v is Timestamp) {
+      final dt = v.toDate();
       final y = dt.year.toString().padLeft(4, '0');
       final m = dt.month.toString().padLeft(2, '0');
       final d = dt.day.toString().padLeft(2, '0');
       return "$y-$m-$d";
-    } catch (_) {
-      return iso.length >= 10 ? iso.substring(0, 10) : iso;
     }
+
+    if (v is String) {
+      if (v.isEmpty) return "";
+      try {
+        final dt = DateTime.parse(v);
+        final y = dt.year.toString().padLeft(4, '0');
+        final m = dt.month.toString().padLeft(2, '0');
+        final d = dt.day.toString().padLeft(2, '0');
+        return "$y-$m-$d";
+      } catch (_) {
+        return v.length >= 10 ? v.substring(0, 10) : v;
+      }
+    }
+
+    return "";
   }
 
   Widget _starRowFrom10(double rating10, ColorScheme cs) {
@@ -351,18 +667,47 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
   }
 
   Widget _buildReviewsSection(ColorScheme cs) {
+    final myUnified = _myReviewAsUnifiedReview();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Short Reviews",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: cs.onSurface,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                "Short Reviews",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: cs.onSurface,
+                ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: (_isSavingMyReview || realImdbId == null)
+                  ? null
+                  : _showMyReviewDialog,
+              icon: Icon(
+                _myReviewDoc == null ? Icons.edit_outlined : Icons.edit_note,
+                size: 18,
+              ),
+              label: Text(_myReviewDoc == null ? "Write" : "Edit"),
+            )
+          ],
         ),
         const SizedBox(height: 10),
+
+        // My Review pinned at top
+        if (_isLoadingMyReview)
+          Text("Loading your review...",
+              style: TextStyle(color: cs.onSurfaceVariant))
+        else if (myUnified != null) ...[
+          _buildReviewTile(myUnified, cs, isMine: true),
+          const SizedBox(height: 6),
+        ],
+
+        // TMDb reviews
         if (_isLoadingReviews)
           const Center(child: CircularProgressIndicator())
         else if (_topReviews.isEmpty)
@@ -376,11 +721,12 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     );
   }
 
-  Widget _buildReviewTile(dynamic review, ColorScheme cs) {
+  Widget _buildReviewTile(dynamic review, ColorScheme cs,
+      {bool isMine = false}) {
     final id = _reviewId(review);
     final author = _authorName(review);
     final rating10 = _authorRating10(review);
-    final date = _formatIsoDate((review is Map) ? review['created_at'] : null);
+    final date = _formatDate((review is Map) ? review['created_at'] : null);
     final content = _reviewContent(review);
     final avatar = _avatarUrl(review);
 
@@ -415,15 +761,40 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      author,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: cs.onSurface,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            author,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: cs.onSurface,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        if (isMine)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: cs.primary.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                  color: cs.primary.withOpacity(0.25)),
+                            ),
+                            child: Text(
+                              "YOURS",
+                              style: TextStyle(
+                                color: cs.primary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Row(
@@ -528,7 +899,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
         language: 'en-US',
       );
 
-      // prefer Teaser > Trailer > first YouTube
       Map<String, dynamic>? picked;
       final yt = videos
           .where((v) =>
@@ -557,7 +927,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
         includeImageLanguage: 'en,null',
       );
 
-      // take many, but UI shows 5
       final urls = <String>[];
       for (final b in backdrops) {
         if (b is! Map) continue;
@@ -597,9 +966,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
     final uri = Uri.parse("https://www.youtube.com/watch?v=$key");
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Could not open video.")),
-      );
+      _toast("Could not open video.");
     }
   }
 
@@ -646,8 +1013,6 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
 
   Widget _buildMediaSection(ColorScheme cs) {
     final key = _youtubeKey();
-
-    // show up to 5 stills total
     final stills = _stillUrls.take(5).toList();
 
     if (_isLoadingMedia) {
@@ -657,10 +1022,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           Text(
             "Videos / Stills",
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: cs.onSurface,
-            ),
+                fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface),
           ),
           const SizedBox(height: 10),
           const Center(child: CircularProgressIndicator()),
@@ -675,21 +1037,15 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           Text(
             "Videos / Stills",
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: cs.onSurface,
-            ),
+                fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface),
           ),
           const SizedBox(height: 10),
-          Text(
-            "No videos or stills found.",
-            style: TextStyle(color: cs.onSurfaceVariant),
-          ),
+          Text("No videos or stills found.",
+              style: TextStyle(color: cs.onSurfaceVariant)),
         ],
       );
     }
 
-    // Layout like: [VIDEO][IMAGE] on top, then 4 images below (if available)
     final firstImage = stills.isNotEmpty ? stills.first : null;
     final restImages = stills.length > 1 ? stills.sublist(1) : <String>[];
 
@@ -699,21 +1055,14 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
         Text(
           "Videos / Stills",
           style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: cs.onSurface,
-          ),
+              fontSize: 18, fontWeight: FontWeight.bold, color: cs.onSurface),
         ),
         const SizedBox(height: 10),
         Row(
           children: [
-            Expanded(
-              child: _buildVideoTile(cs, key),
-            ),
+            Expanded(child: _buildVideoTile(cs, key)),
             const SizedBox(width: 10),
-            Expanded(
-              child: _buildStillTile(cs, firstImage),
-            ),
+            Expanded(child: _buildStillTile(cs, firstImage)),
           ],
         ),
         const SizedBox(height: 10),
@@ -749,9 +1098,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           child: Text(
             "No Teaser",
             style: TextStyle(
-              color: cs.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+                color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -781,9 +1128,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                     color: cs.onSurfaceVariant, size: 42),
               ),
             ),
-            Container(
-              color: Colors.black.withOpacity(0.18),
-            ),
+            Container(color: Colors.black.withOpacity(0.18)),
             Center(
               child: Icon(
                 Icons.play_circle_fill,
@@ -803,10 +1148,9 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                 child: const Text(
                   "Teaser",
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -831,9 +1175,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           child: Text(
             "No Stills",
             style: TextStyle(
-              color: cs.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+                color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -919,18 +1261,16 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           Text(
             "${widget.movie['Title']} ($_year)",
             style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface),
           ),
           Text(
             "——$_director",
             style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurfaceVariant,
-            ),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
           Row(
@@ -960,26 +1300,21 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           const SizedBox(height: 20),
 
           // ---- Summary ----
-          Text(
-            "Summary",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
+          Text("Summary",
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface)),
           const SizedBox(height: 8),
           LayoutBuilder(
             builder: (context, constraints) {
               final span =
                   TextSpan(text: _plot, style: const TextStyle(fontSize: 16));
               final tp = TextPainter(
-                text: span,
-                maxLines: 3,
-                textDirection: TextDirection.ltr,
-              );
+                  text: span, maxLines: 3, textDirection: TextDirection.ltr);
               tp.layout(maxWidth: constraints.maxWidth);
               final bool isExceeding = tp.didExceedMaxLines;
+
               return InkWell(
                 onTap: isExceeding
                     ? () => setState(() => _isExpanded = !_isExpanded)
@@ -994,9 +1329,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                           ? TextOverflow.visible
                           : TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: colorScheme.onSurfaceVariant,
-                        fontSize: 16,
-                      ),
+                          color: colorScheme.onSurfaceVariant, fontSize: 16),
                     ),
                     if (isExceeding)
                       Align(
@@ -1031,43 +1364,34 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                 const Text(
                   "Category: ",
                   style: TextStyle(
-                    color: Color.fromARGB(179, 166, 67, 188),
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Color.fromARGB(179, 166, 67, 188),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold),
                 ),
-                ...genreList
-                    .map(
-                      (genre) => Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: Text(
-                          genre,
-                          style: TextStyle(
+                ...genreList.map((genre) => Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: Text(
+                        genre,
+                        style: TextStyle(
                             color: colorScheme.onPrimaryContainer,
                             fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                            fontWeight: FontWeight.w500),
                       ),
-                    )
-                    .toList(),
+                    )),
               ],
             ),
           if (genreList.isNotEmpty) const SizedBox(height: 22),
 
-          // ---- NEW: Videos / Stills ----
+          // ---- Videos / Stills ----
           _buildMediaSection(colorScheme),
           const SizedBox(height: 28),
 
           // ---- Cast ----
-          Text(
-            "Cast",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
-            ),
-          ),
+          Text("Cast",
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface)),
           const SizedBox(height: 10),
           isLoadingCast
               ? const Center(child: CircularProgressIndicator())
@@ -1085,14 +1409,11 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Ratings",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
+                Text("Ratings",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface)),
                 const SizedBox(height: 12),
                 _buildRatingLine("IMDb", imdb, colorScheme),
                 _buildRatingLine("Rotten Tomatoes", rotten, colorScheme),
@@ -1102,7 +1423,7 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
           ),
           const SizedBox(height: 30),
 
-          // ---- Reviews ----
+          // ---- Reviews (TMDb + My Review) ----
           _buildReviewsSection(colorScheme),
 
           const SizedBox(height: 50),
@@ -1121,10 +1442,8 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(
-                        widget.movie['Poster'] ?? "",
-                        fit: BoxFit.cover,
-                      ),
+                      Image.network(widget.movie['Poster'] ?? "",
+                          fit: BoxFit.cover),
                       Positioned(
                         top: 50,
                         left: 20,
@@ -1190,11 +1509,9 @@ class _MovieDetailPageState extends State<MovieDetailPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(platform, style: TextStyle(color: colorScheme.onSurfaceVariant)),
-          Text(
-            score,
-            style: const TextStyle(
-                color: Colors.amber, fontWeight: FontWeight.bold),
-          ),
+          Text(score,
+              style: const TextStyle(
+                  color: Colors.amber, fontWeight: FontWeight.bold)),
         ],
       ),
     );
