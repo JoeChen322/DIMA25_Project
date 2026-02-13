@@ -10,14 +10,17 @@ LumiList is a modern, cross-platform movie marking and discovery application bui
 ## ✨ Key Features
 
 * **Real-time Discovery**: Explore and stay updated with the most popular movies currently trending.
-* **Intelligent Search**: Find movies by title using fuzzy search logic, providing detailed info including posters, synopses, cast, and directors.
+* **Intelligent Search**: Find movies by title using fuzzy search logic, providing detailed info including posters, synopses, cast, and directors,and could filter by many conditions like popularity, catergoies...
 * **External Ratings Integration**: Instantly view ratings from authoritative sources like **IMDb**, **Rotten Tomatoes**, and **Metascore** via public APIs.
 * **Personal Collection Management**: 
     * **Favorites**: Heart your top picks to save them to your personal database.
     * **Watchlist**: Save movies to a "See Later" list with a single tap.
     * **Personal Ratings**: Rate movies you've watched to keep a record of your personal taste.
+    * **Personal Comment**: Edit the comment for a movie
 * **Recommendations System**: Get suggestions for classic movies tailored to your specific taste.
 * **Adaptive UI**: Optimized layouts for both mobile phones and tablets, ensuring a seamless experience across different screen sizes.Dark and Light modes with the system.
+* **Pagination and Parallel Request**: Provide better user experience and low latency
+* **Device Synchronization**:Real time account synchronization across multiple devices
 
 ---
 
@@ -40,6 +43,8 @@ Contains the primary application screens and business logic:
 ### `/widgets`
 * Contains reusable components and defines the global format styles for the application.
 
+### `/test`
+* Contains test case for database, api, widgets and whole flow
 ---
 
 ## 🛠️ Technical Stack
@@ -64,11 +69,4 @@ Contains the primary application screens and business logic:
 
 ---
 
-## 📝 Future Work
-
-- [ ] Support searching by actors or movie genres.
-- [ ] Perfect recommand system.
-- [ ] Enhanced search relevance sorting.
-
----
 *Created for the DIMA25 Project.*
